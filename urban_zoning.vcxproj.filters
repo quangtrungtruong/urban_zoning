@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\pdf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\densecrf\bipartitedensecrf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\densecrf\densecrf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\densecrf\filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\densecrf\mem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\densecrf\permutohedral.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\dense_ho_inference.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\densecrf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\denseho.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\evaluate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\higherorder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\permutohedral.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\potential.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crf\denseho\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="urban_zoning.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stats.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="crf\pdf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\densecrf\densecrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\densecrf\fastmath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\densecrf\mem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\densecrf\permutohedral.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\densecrf\sse_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\cuda_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\gettimeofday.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\helper_cuda.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\helper_string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\MirroredArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\cuda\permutohedral.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\densecrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\evaluate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\fastmath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\higherorder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\permutohedral.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\potential.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\sse_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crf\denseho\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="urban_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="math_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
