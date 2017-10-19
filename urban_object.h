@@ -105,7 +105,10 @@ public:
 	float4** satellite_prob;
 	int **satellite_zone;
 	float4* geotagged_prob;
+	float4** nearest_geotagged_dis;
 	int4 *geotagged_info;
+	unsigned char *im_orig;
+	vector<uint>        label_vec;
 
 	string city;
 	string data_dir;

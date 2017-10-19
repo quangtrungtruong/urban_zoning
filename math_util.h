@@ -530,11 +530,11 @@ inline float4 fracf(float4 v) {
 }
 
 inline bool isnan3(float3 v) {
-    return isnan(v.x) || isnan(v.y) || isnan(v.z);
+    return std::isnan(v.x) || std::isnan(v.y) || std::isnan(v.z);
 }
 
 inline bool isnan4(float4 v) {
-    return isnan(v.x) || isnan(v.y) || isnan(v.z) || isnan(v.w);
+    return std::isnan(v.x) || std::isnan(v.y) || std::isnan(v.z) || std::isnan(v.w);
 }
 
 inline bool iszero4(float4 v) {

@@ -1,5 +1,6 @@
 #include "urban_object.h"
 #include "iostream"
+#include <string.h>
 
 /**
 *  Note: this source code uses STL set and map. It is good to keep in mind
@@ -14,9 +15,8 @@ int main(int argc, char* argv[]) {
 		std::cout << "Usage: " << argv[0] << " <dataset or path to dataset> <city> " << std::endl;
 		return 0;
 	}
-
+    
 	UrbanObject mo(argv[1], argv[2]);
-
 	bool ho_enabled = false;
 	bool cooc_enabled = false;
 	if (argc == 4) {
@@ -31,16 +31,4 @@ int main(int argc, char* argv[]) {
 	}
 	mo.RunDenseCRF(ho_enabled, cooc_enabled);
 	return 0;
-
-	/*if (strcmp(argv[2], "unary_sscnet") == 0) {
-		if (argc < 5) {
-			std::cout << "unary_sscnet <pose file>  <probability file>" << std::endl;
-			return 0;
-		}
-
-		std::string poseFile = argv[3];
-		std::string probFile = argv[4];
-		mo.MakeUnaryFromSSCNet(poseFile, probFile);
-		return 0;
-	}*/
 }
