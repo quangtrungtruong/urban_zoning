@@ -40,8 +40,8 @@
  * DAMAGE.
  * ------------------------------------------------------------------------- */
 
-#include "crf\denseho\densecrf.h"
-#include "crf\denseho\permutohedral.h"
+#include "crf/denseho/densecrf.h"
+#include "crf/denseho/permutohedral.h"
 
 #ifdef __SSE__
 # define SSE_DENSE_CRF

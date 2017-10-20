@@ -15,7 +15,6 @@ int main(int argc, char* argv[]) {
 		std::cout << "Usage: " << argv[0] << " <dataset or path to dataset> <city> " << std::endl;
 		return 0;
 	}
-    
 	UrbanObject mo(argv[1], argv[2]);
 	bool ho_enabled = false;
 	bool cooc_enabled = false;

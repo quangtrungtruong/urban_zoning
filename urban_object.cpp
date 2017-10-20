@@ -1,5 +1,6 @@
 #include "urban_object.h"
 #include "stats.h"
+#include <opencv2/opencv.hpp>
 #include "crf/denseho/densecrf.h"
 #include <iostream>
 #include <fstream>
@@ -91,20 +92,23 @@ void UrbanObject::Init() {
 void UrbanObject::LoadSatelliteGeotagged(){
 	string dir_sat = data_dir + "//satellite//" + city + ".txt";
 	string dir_geo = data_dir + "//geotagged//" + city + ".txt";
+	string dir_sateimg = data_dir + "//satellite//" + city + ".jpg";
 	ifstream satellite_fin(dir_sat.c_str());
 	ifstream geotagged_fin(dir_geo.c_str());
 
-	cout << "Start with city " << city;
+	cout << "Start with city " << city << endl;
 	
 	if (satellite_fin.is_open())
 	{
         satellite_fin >> rows >> cols;
         satellite_prob = new float4*[rows];
 		satellite_zone = new int*[rows];
+		label_matrix = new int*[rows];
 		for (int i = 0; i < rows; i++)
 		{
 			satellite_prob[i] = new float4[cols];
 			satellite_zone[i] = new int[cols];
+			label_matrix[i] = new int[cols];
 			for (int j = 0; j < cols; j++)
                 satellite_fin >> satellite_prob[i][j].x >> satellite_prob[i][j].y >> satellite_prob[i][j].z >> satellite_prob[i][j].w >> satellite_zone[i][j];
 		}
@@ -172,6 +176,18 @@ void UrbanObject::LoadSatelliteGeotagged(){
 				line.erase(0, pos + delimiter.length());
 			}
 		}
+		
+		cv::Mat satellite_img = cv::imread(dir_sateimg);
+
+		pixel_vec.clear();
+		for (int i = 0; i < cols; i++) {
+			for (int j = 0; j < rows; j++) 
+			{ 
+				pixel_vec.push_back(make_float4(satellite_img.at<cv::Vec3b>(j, i)[0], satellite_img.at<cv::Vec3b>(j, i)[1], satellite_img.at<cv::Vec3b>(j, i)[2]));
+			}
+				
+		}
+
 		satellite_fin.close();
 		geotagged_fin.close();
 	}
@@ -207,7 +223,6 @@ void UrbanObject::ComputeProbability() {
 		}
 	}
 }
-
 
 //void UrbanObject::ReSegment(uint root_vertex, uint tail_vertex) {
 //	// assume root and tail vertex has the same label
@@ -437,33 +452,34 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	 }
 
 	 // feature vector for bilateral filtering inside CRF
-	 /*float* gaussian = new float[N * 3];
-	 const float sx = 0.1;
-	 const float sy = 0.1;
-	 const float sz = 0.1;
-	 for (int i = 0; i < N; ++i) {
-	     gaussian[i * 3 + 0] = pixel_vec[i].x / sx;
-	     gaussian[i * 3 + 1] = pixel_vec[i].y / sy;
-	     gaussian[i * 3 + 2] = pixel_vec[i].z / sz;
-	 }*/
+	 float* gaussian = new float[N * 2];
+	 const float sx = 3;
+	 const float sy = 3;
+	 for (int i = 0; i < rows; ++i)
+		 for (int j = 0; j < cols; ++j){
+		 gaussian[(i * cols + j) * 2 + 0] = i / sx;
+		 gaussian[(i * cols + j) * 2 + 1] = j / sy;
+	 }
 
-	/* float* surface = new float[N * 6];
-	 const float snx = 0.1;
-	 const float sny = 0.1;
-	 const float snz = 0.1;
-	 for (int i = 0; i < N; ++i) {
-	     surface[i * 6 + 0] = vertex_vec[i].x / sx;
-	     surface[i * 6 + 1] = vertex_vec[i].y / sy;
-	     surface[i * 6 + 2] = vertex_vec[i].z / sz;
-	     surface[i * 6 + 3] = normal_vec[i].x / snx;
-	     surface[i * 6 + 4] = normal_vec[i].y / sny;
-	     surface[i * 6 + 5] = normal_vec[i].z / snz;
-	 }*/
+	 float* bilateral = new float[N * 5];
+	 const float bsx = 50;
+	 const float bsy = 50;
+	 const float sr = 15;
+	 const float sg = 15;
+	 const float sb = 15;
+	 for (int i = 0; i < rows; ++i)
+		 for (int j = 0; j < cols; ++j){
+			 bilateral[(i * cols + j) * 5 + 0] = i / bsx;
+			 bilateral[(i * cols + j) * 5 + 1] = j / bsy;
+			 bilateral[(i * cols + j) * 5 + 2] = pixel_vec[i * cols + j].x / sr;
+			 bilateral[(i * cols + j) * 5 + 3] = pixel_vec[i * cols + j].y / sg;
+			 bilateral[(i * cols + j) * 5 + 4] = pixel_vec[i * cols + j].z / sb;
+	 }
 
 	DenseCRF crf(N, M);
 	 crf.setUnaryEnergy(unary);
-	 //crf.addPairwiseEnergy(gaussian, 3, 3.0f); // pairwise gaussian
-	 //crf.addPairwiseEnergy(surface, 6, 5.0f); // pairwise bilateral
+	 crf.addPairwiseEnergy(gaussian, 2, 3.0f); // pairwise gaussian
+	 crf.addPairwiseEnergy(bilateral, 5, 4.0f); // pairwise bilateral
 
 	 //if (ho_enabled) {
 	 //    crf.setDetHO(1);
@@ -497,9 +513,18 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	 double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	 std::cout << "CRF " << ho_enabled << " " << cooc_enabled << " time: " << elapsed_secs << std::endl;
 
-	 for (int i = 0; i < N; ++i) {
-	     label_vec[i] = map[i] + 1;
-	 }
+	 
+	 cv::Mat img(rows, cols, CV_8U, cv::Scalar(0));
+	 for (int i = 0; i < rows; i++)
+		 for (int j = 0; j < cols; j++){
+			 label_matrix[i][j] = map[i*cols + j] + 1;
+			 img.at<uchar>(i,j) = label_matrix[i][j] * 50;
+		 }
+	string dir_img = data_dir + "//satellite//" + city + "_crf.jpg";
+	imwrite(city+"_crf.jpg", img);
+	imwrite(dir_img, img);
+	 
+	 
 
 	 crf.clearMemory();
 	 delete[] unary;

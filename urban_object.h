@@ -107,8 +107,8 @@ public:
 	float4* geotagged_prob;
 	float4** nearest_geotagged_dis;
 	int4 *geotagged_info;
-	unsigned char *im_orig;
-	vector<uint>        label_vec;
+	vector<float4> pixel_vec;
+	int** label_matrix;
 
 	string city;
 	string data_dir;
@@ -147,6 +147,8 @@ public:
 	float mrf_potential;
 	float mrf_iteration;
 	float rgbd_c_threshold;
+	unsigned char *im_orig = nullptr;
+
 
 	uchar4 unlabel_color;
 
