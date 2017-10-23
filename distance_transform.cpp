@@ -43,9 +43,10 @@ void distance_transform(string input_name, string output_name){
 	// save to distance transform to text file
 	ofstream infile(output_name_txt);
 	infile << mat_in.rows << " " << mat_in.cols << endl;
+	double diagonal_length = sqrt(out->height()*out->height() + out->width()*out->width());
 	for (int y = 0; y < mat_in.rows; y++) {
 		for (int x = 0; x < mat_in.cols; x++)
-			infile << out->access[y][x] << " ";
+			infile << out->access[y][x] / diagonal_length << " ";
 		infile << endl;
 	}
 	infile.close();
@@ -67,7 +68,7 @@ int main(int argc, char** argv)
 		std::cout << "Format for parameter: <path> <city>";
 		return 0;
 	}
-
+	cout << "finish";
 	std::string data_dir = argv[1];
 	std::string city = argv[2];
 
