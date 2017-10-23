@@ -1,4 +1,5 @@
 #include "urban_object.h"
+#include "proposal.h"
 #include "stats.h"
 #include <opencv2/opencv.hpp>
 #include "crf/denseho/densecrf.h"
@@ -84,7 +85,7 @@ UrbanObject::~UrbanObject() {
 void UrbanObject::Init() {
 	LoadSatelliteGeotagged();
 	ComputeProbability();
-
+	ConvertNearestZoneTypeVec();
 	cout << "Initialization done." << endl;
 }
 
@@ -93,26 +94,46 @@ void UrbanObject::LoadSatelliteGeotagged(){
 	string dir_sat = data_dir + "//satellite//" + city + ".txt";
 	string dir_geo = data_dir + "//geotagged//" + city + ".txt";
 	string dir_sateimg = data_dir + "//satellite//" + city + ".jpg";
+	string dir_distance_tran = data_dir + "//distance_transform//" + city + "_dt_";
 	ifstream satellite_fin(dir_sat.c_str());
 	ifstream geotagged_fin(dir_geo.c_str());
+	ifstream dist_t_fin0((dir_distance_tran + "0.txt").c_str());
+	ifstream dist_t_fin1((dir_distance_tran + "1.txt").c_str());
+	ifstream dist_t_fin2((dir_distance_tran + "2.txt").c_str());
+	ifstream dist_t_fin3((dir_distance_tran + "3.txt").c_str());
 
 	cout << "Start with city " << city << endl;
 	
+	int temp;
 	if (satellite_fin.is_open())
 	{
         satellite_fin >> rows >> cols;
+		dist_t_fin0 >> temp >> temp;
+		dist_t_fin1 >> temp >> temp;
+		dist_t_fin2 >> temp >> temp;
+		dist_t_fin3 >> temp >> temp;
+
         satellite_prob = new float4*[rows];
+		nearest_distance = new float4*[rows];
 		satellite_zone = new int*[rows];
 		label_matrix = new int*[rows];
 		for (int i = 0; i < rows; i++)
 		{
 			satellite_prob[i] = new float4[cols];
+			nearest_distance[i] = new float4[cols];
 			satellite_zone[i] = new int[cols];
 			label_matrix[i] = new int[cols];
 			for (int j = 0; j < cols; j++)
-                satellite_fin >> satellite_prob[i][j].x >> satellite_prob[i][j].y >> satellite_prob[i][j].z >> satellite_prob[i][j].w >> satellite_zone[i][j];
+			{ 
+				satellite_fin >> satellite_prob[i][j].x >> satellite_prob[i][j].y >> satellite_prob[i][j].z >> satellite_prob[i][j].w >> satellite_zone[i][j];
+				dist_t_fin0 >> nearest_distance[i][j].x; dist_t_fin1 >> nearest_distance[i][j].y; dist_t_fin2 >> nearest_distance[i][j].z; dist_t_fin3 >> nearest_distance[i][j].w;
+			}
 		}
 		satellite_fin.close();
+		dist_t_fin0.close();
+		dist_t_fin1.close();
+		dist_t_fin2.close();
+		dist_t_fin3.close();
 	}
 
 	pixel_num = rows*cols;
@@ -149,19 +170,19 @@ void UrbanObject::LoadSatelliteGeotagged(){
 				line.erase(0, pos + delimiter.length());
 				pos = line.find(delimiter);
 				token = line.substr(0, pos);
-				geotagged_info[i].x = atoi(token.c_str());
+				geotagged_prob[i].x = atoi(token.c_str());
 				line.erase(0, pos + delimiter.length());
 				pos = line.find(delimiter);
 				token = line.substr(0, pos);
-				geotagged_info[i].y = atoi(token.c_str());
+				geotagged_prob[i].y = atoi(token.c_str());
 				line.erase(0, pos + delimiter.length());
 				pos = line.find(delimiter);
 				token = line.substr(0, pos);
-				geotagged_info[i].z = atoi(token.c_str());
+				geotagged_prob[i].z = atoi(token.c_str());
 				line.erase(0, pos + delimiter.length());
 				pos = line.find(delimiter);
 				token = line.substr(0, pos);
-				geotagged_info[i].w = atoi(token.c_str());
+				geotagged_prob[i].w = atoi(token.c_str());
 				line.erase(0, pos + delimiter.length());
 
 				for (int k = 0; k < 205; k++) {
@@ -191,6 +212,23 @@ void UrbanObject::LoadSatelliteGeotagged(){
 		satellite_fin.close();
 		geotagged_fin.close();
 	}
+}
+
+void UrbanObject::ConvertNearestZoneTypeVec(){
+	nearest_p_vec.resize(pixel_num);
+	for (int i = 0; i < pdf_vec.size(); ++i)
+	{
+		nearest_p_vec[i].resize(num_class);
+		nearest_p_vec[i].setZero();
+	}
+
+	for (int i = 0; i < rows; i++)
+		for (int j = 0; j < cols; j++){
+			nearest_p_vec[i*cols + j][0] = nearest_distance[i][j].x;
+			nearest_p_vec[i*cols + j][1] = nearest_distance[i][j].y;
+			nearest_p_vec[i*cols + j][2] = nearest_distance[i][j].z;
+			nearest_p_vec[i*cols + j][3] = nearest_distance[i][j].w;
+		}
 }
 
 void UrbanObject::ComputeProbability() {
@@ -398,7 +436,7 @@ int t_reconst(int m, int n, int index, float* p)
 	return 1;
 }
 
-void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
+void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, double beta) {
 	int* b = coefficients;
 	for (int n = 0; n <= DENOMINATOR; ++n) {
 		binomial[n] = b;
@@ -433,10 +471,10 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	printf("Average L2 error: %lf\n", l2 / pixel_num);
 	stats.toc("Compression");
 
-	/* std::vector<region> proposed_regions;
+	 std::vector<region> proposed_regions;
 	 if (ho_enabled) {
-	     propose_regions_fast(vertex_vec, normal_vec, eset, proposed_regions);
-	 }*/
+		 propose_regions_fast(geotagged_info, num_geotaggeds, rows, cols, proposed_regions);
+	 }
 
 	 int N = pixel_num;
 	 int M = pdf_vec[0].size();
@@ -444,11 +482,11 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 
 	 float* unary = new float[N * M];
 	 for (int i = 0; i < N; ++i) {
-	     for (int k = 0; k < M; ++k) {
-	         unary[i * M + k] = -log(pdf_vec[i][k]);
-	         if (std::isnan(unary[i * M + k]))
-	             unary[i * M + k] = std::numeric_limits<float>::infinity();
-	     }
+		 for (int k = 0; k < M; ++k) {
+			 unary[i * M + k] = anpha*(-log(pdf_vec[i][k])) + beta*log(1 / nearest_p_vec[i][k]);
+			 if (std::isnan(unary[i * M + k]))
+				 unary[i * M + k] = std::numeric_limits<float>::infinity();
+		 }
 	 }
 
 	 // feature vector for bilateral filtering inside CRF
@@ -481,15 +519,15 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	 crf.addPairwiseEnergy(gaussian, 2, 3.0f); // pairwise gaussian
 	 crf.addPairwiseEnergy(bilateral, 5, 4.0f); // pairwise bilateral
 
-	 //if (ho_enabled) {
-	 //    crf.setDetHO(1);
-	 //    crf.initMemoryDetHO(0.0005, 1.0);
-	 //    crf.setDetSegments(proposed_regions);
-	 //}
+	 if (ho_enabled) {
+	     crf.setDetHO(1);
+	     crf.initMemoryDetHO(0.0005, 1.0);
+	     crf.setDetSegments(proposed_regions);
+	 }
 
 	 // need to implement this section to load cooc_unary and cooc_pairwise
 	 // it is loaded in original author code of higherorder.cpp
-	 float* cooc_unary = new float[M];
+	/* float* cooc_unary = new float[M];
 	 float* cooc_pairwise = new float[M * M];
 	 memset(cooc_unary, 0, sizeof(float) * M);
 	 memset(cooc_pairwise, 0, sizeof(float) * M * M);
@@ -502,7 +540,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	         cooc_unary[i] = cooc_pairwise[i * M + i];
 	     crf.setHOCooc(1);
 	     crf.setCooccurence(cooc_unary, cooc_pairwise, 0.2);
-	 }
+	 }*/
 
 	 std::clock_t begin = clock();
 
@@ -520,8 +558,8 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 			 label_matrix[i][j] = map[i*cols + j] + 1;
 			 img.at<uchar>(i,j) = label_matrix[i][j] * 50;
 		 }
-	string dir_img = data_dir + "//satellite//" + city + "_crf.jpg";
-	imwrite(city+"_crf.jpg", img);
+	string dir_img = data_dir + "//satellite//crf3_" + city + ".jpg";
+	imwrite("crf3_" + city+".jpg", img);
 	imwrite(dir_img, img);
 	 
 	 

@@ -16,8 +16,10 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 	UrbanObject mo(argv[1], argv[2]);
-	bool ho_enabled = false;
+	bool ho_enabled = true;
 	bool cooc_enabled = false;
+	double anpha=0.1;
+	double beta=1;
 	if (argc == 4) {
 		if (strcmp(argv[3], "ho") == 0)
 			ho_enabled = true;
@@ -28,6 +30,6 @@ int main(int argc, char* argv[]) {
 		ho_enabled = true;
 		cooc_enabled = true;
 	}
-	mo.RunDenseCRF(ho_enabled, cooc_enabled);
+	mo.RunDenseCRF(ho_enabled, cooc_enabled, anpha, beta);
 	return 0;
 }

@@ -80,8 +80,9 @@ public:
 	void GenerateDisperancyViews();
 	void ShowMesh();
 	void GraphcutAndMRF(bool has_vertex_color = false);
-	void RunDenseCRF(bool ho_enabled, bool cooc_enabled);
+	void RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, double beta);
 	void ComputeProbability();
+	void ConvertNearestZoneTypeVec();
 	bool AskForSave();
 	
 	void ComputeStats(string type);
@@ -103,6 +104,7 @@ public:
 	int   cols;
 	int num_geotaggeds;
 	float4** satellite_prob;
+	float4** nearest_distance;
 	int **satellite_zone;
 	float4* geotagged_prob;
 	float4** nearest_geotagged_dis;
@@ -160,7 +162,8 @@ public:
 	float4 cur_centroid;
 	float4 example_centroid;
 
-	std::vector<DiscretePdf> pdf_vec;
+	std::vector<DiscretePdf> pdf_vec; 
+	std::vector<DiscretePdf> nearest_p_vec;
 
 public:
 	enum DisplayMode {                    // presentation modes
