@@ -1,6 +1,8 @@
 #include "urban_object.h"
 #include "iostream"
 #include <string.h>
+#include <opencv2/opencv.hpp>
+#include <fstream>
 
 /**
 *  Note: this source code uses STL set and map. It is good to keep in mind
@@ -17,19 +19,37 @@ int main(int argc, char* argv[]) {
 	}
 	UrbanObject mo(argv[1], argv[2]);
 	bool ho_enabled = true;
-	bool cooc_enabled = false;
-	double anpha=0.1;
+	bool pairewise_enabled = true;
+	double anpha = 0;
 	double beta=1;
-	if (argc == 4) {
-		if (strcmp(argv[3], "ho") == 0)
-			ho_enabled = true;
-		if (strcmp(argv[3], "cooc") == 0)
-			cooc_enabled = true;
-	}
-	else if (argc == 5) {
-		ho_enabled = true;
-		cooc_enabled = true;
-	}
-	mo.RunDenseCRF(ho_enabled, cooc_enabled, anpha, beta);
+	int w = 10;
+	int iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = true; pairewise_enabled = true; anpha = 1; beta = 0; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = true; pairewise_enabled = true; anpha = 0.467; beta = 0.633; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = true; pairewise_enabled = true; anpha = 0.467; beta = 0.633; w = 10; iteration = 40;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = false; pairewise_enabled = false; anpha = 0.467; beta = 0.633; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = false; pairewise_enabled = false; anpha = 1; beta = 0; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = false; pairewise_enabled = false; anpha = 0; beta = 1; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = false; pairewise_enabled = true; anpha = 1; beta = 0; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
+	ho_enabled = true; pairewise_enabled = true; anpha = 0; beta = 1; w = 10; iteration = 10;
+	mo.RunDenseCRF(ho_enabled, pairewise_enabled, anpha, beta, w, iteration);
+
 	return 0;
 }
+

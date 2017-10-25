@@ -30,40 +30,9 @@ static std::string display_mode_string[UrbanObject::DisplayMode::NUM_DISPLAY_MOD
 	"Shading"
 };
 
+UrbanObject::UrbanObject(){}
+
 UrbanObject::UrbanObject(const char* data_dir, const char* city) {
-	/*
-	string str = argv;
-	if (str.find("/") == string::npos) {
-	// input is a name of the dataset
-	dataset = argv;
-	}
-	else {
-
-	// input is a path to the dataset folder or a mesh file in the dataset folder
-	data_dir = argv;
-
-	fs::path path(data_dir);
-	if (fs::is_directory(path) == false) {
-	mesh_file = path.filename().string();
-	data_dir = path.remove_filename().string();
-	}
-
-	if (data_dir.back() != '/') data_dir += "/";
-	size_t last = data_dir.length() - 1;
-	size_t pos = data_dir.rfind("/", data_dir.length() - 2);
-
-	if (pos == string::npos) {
-	throw std::runtime_error("Invalid input path");
-	}
-
-	dataset = data_dir.substr(pos + 1, last - pos - 1);
-	std::cout << "Dataset: " << dataset << std::endl;
-
-	if (mesh_file == "") {
-	mesh_file = dataset + ".ply";
-	}
-	}
-	*/
 	this->data_dir = data_dir;
 	this->city = city;
 
@@ -262,96 +231,6 @@ void UrbanObject::ComputeProbability() {
 	}
 }
 
-//void UrbanObject::ReSegment(uint root_vertex, uint tail_vertex) {
-//	// assume root and tail vertex has the same label
-//	uint label = label_vec[root_vertex];
-//
-//	vector<uint> curr_vec;
-//	vector<int> curr_map(vertex_num);         // map vertex to local index in order to build subgraph
-//	int k = 0;
-//	for (uint i = 0; i < vertex_num; ++i) {
-//		if (label_vec[i] == label) {
-//			curr_vec.push_back(i);
-//			curr_map[i] = k;
-//			k++;
-//		}
-//		else {
-//			curr_map[i] = -1;
-//		}
-//	}
-//
-//	set<pii> curr_edge;
-//	/*// V^2 E complexity, too slow when need to split a big label with ~500K points
-//	for (uint i = 0; i < curr_vec.size(); ++i) {
-//	for (uint j = i; j < curr_vec.size(); ++j) {
-//	set<pii>::iterator it = eset.find(pii(curr_vec[i], curr_vec[j]));
-//	if (it != eset.end())
-//	curr_edge.insert(pii(i, j));
-//	}
-//	}*/
-//	for (set<pii>::iterator it = eset.begin(); it != eset.end(); ++it) {
-//		pii edge = *it;
-//
-//		if (curr_map[edge.first] < 0 || curr_map[edge.second] < 0)
-//			continue;
-//		int i = curr_map[edge.first];
-//		int j = curr_map[edge.second];
-//		if (i < j)
-//			curr_edge.insert(pii(i, j));
-//		else
-//			curr_edge.insert(pii(j, i));
-//	}
-//
-//	vector<uint> curr_label(curr_vec.size());
-//	vector<float4> curr_normal(curr_vec.size());
-//	vector<uchar4> curr_rgb(curr_vec.size());
-//	for (uint i = 0; i < curr_vec.size(); ++i) {
-//		curr_normal[i] = normal_vec[curr_vec[i]];
-//		curr_rgb[i] = rgb_vec[curr_vec[i]];
-//	}
-//	SegmentMesh sm;
-//	sm.ReCompute(curr_edge, mesh_vertex_threshold2, curr_normal, curr_rgb, curr_label);
-//
-//	map<uint, uint> lmap;
-//	map<uint, uchar4> cmap;     // color map
-//	for (uint i = 0; i < curr_label.size(); ++i) {
-//		map<uint, uint>::iterator it = lmap.find(curr_label[i]);
-//		if (it == lmap.end()) {
-//			lmap.insert(make_pair(curr_label[i], curr_vec[i] + LABEL_BASE));
-//			cmap.insert(make_pair(curr_vec[i] + LABEL_BASE, RandomColor()));
-//		}
-//	}
-//
-//	if (lmap.size() > 1) {
-//		undo_color.Insert(color_vec);
-//		undo_label.Insert(label_vec);
-//		if (anno_window)
-//			anno_window->pushState();
-//
-//		for (uint i = 0; i < curr_vec.size(); ++i) {
-//			label_vec[curr_vec[i]] = lmap[curr_label[i]];
-//			color_vec[curr_vec[i]] = cmap[label_vec[curr_vec[i]]];
-//		}
-//	}
-//
-//	if (label_vec[root_vertex] == label_vec[tail_vertex]) {
-//		cout << "Warning: re-segmentation still assigns same label to root and tail vertex." << endl;
-//		return;
-//	}
-//
-//
-//	// doing graph cut alone is not enough. It will results in many small labels that needs to be merged.
-//	// try run another MRF on this subgraph?
-//	// we set the neighbor cost of the region of start and end vertex to inifinity
-//	// to prevent them from merging again
-//	MRFConstraint(curr_vec, curr_map, cmap, root_vertex, tail_vertex);
-//
-//	if (anno_window)
-//		anno_window->setUpdateRequired(true);
-//
-//	count_resegment++;
-//	undo_count.Insert(make_uint3(count_merge, count_resegment, count_graphcut));
-//}
 #define MAX_DIMENSIONS 100
 #define DENOMINATOR 100
 static int* binomial[DENOMINATOR + 1];
@@ -436,7 +315,7 @@ int t_reconst(int m, int n, int index, float* p)
 	return 1;
 }
 
-void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, double beta) {
+void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double anpha, double beta, int w, int iteration) {
 	int* b = coefficients;
 	for (int n = 0; n <= DENOMINATOR; ++n) {
 		binomial[n] = b;
@@ -473,7 +352,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, 
 
 	 std::vector<region> proposed_regions;
 	 if (ho_enabled) {
-		 propose_regions_fast(geotagged_info, num_geotaggeds, rows, cols, proposed_regions);
+		 propose_regions_fast(geotagged_info, num_geotaggeds, rows, cols, w, proposed_regions);
 	 }
 
 	 int N = pixel_num;
@@ -490,6 +369,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, 
 	 }
 
 	 // feature vector for bilateral filtering inside CRF
+
 	 float* gaussian = new float[N * 2];
 	 const float sx = 3;
 	 const float sy = 3;
@@ -516,8 +396,11 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, 
 
 	DenseCRF crf(N, M);
 	 crf.setUnaryEnergy(unary);
-	 crf.addPairwiseEnergy(gaussian, 2, 3.0f); // pairwise gaussian
-	 crf.addPairwiseEnergy(bilateral, 5, 4.0f); // pairwise bilateral
+
+	 if (pairewise_enabled){
+		 crf.addPairwiseEnergy(gaussian, 2, 3.0f); // pairwise gaussian
+		 crf.addPairwiseEnergy(bilateral, 5, 4.0f); // pairwise bilateral
+	 }
 
 	 if (ho_enabled) {
 	     crf.setDetHO(1);
@@ -525,181 +408,120 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, 
 	     crf.setDetSegments(proposed_regions);
 	 }
 
-	 // need to implement this section to load cooc_unary and cooc_pairwise
-	 // it is loaded in original author code of higherorder.cpp
-	/* float* cooc_unary = new float[M];
-	 float* cooc_pairwise = new float[M * M];
-	 memset(cooc_unary, 0, sizeof(float) * M);
-	 memset(cooc_pairwise, 0, sizeof(float) * M * M);
-	 if (cooc_enabled) {
-	     std::ifstream fin("cooc.txt");
-	     for (int i = 0; i < M; ++i)
-	         for (int j = 0; j < M; ++j)
-	             fin >> cooc_pairwise[i * M + j];
-	     for (int i = 0; i < M; ++i)
-	         cooc_unary[i] = cooc_pairwise[i * M + i];
-	     crf.setHOCooc(1);
-	     crf.setCooccurence(cooc_unary, cooc_pairwise, 0.2);
-	 }*/
-
 	 std::clock_t begin = clock();
 
 	 short *map = new short[N];
-	 crf.map(10, map);
+	 crf.map(iteration, map);
 
 	 std::clock_t end = clock();
 	 double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-	 std::cout << "CRF " << ho_enabled << " " << cooc_enabled << " time: " << elapsed_secs << std::endl;
 
-	 
-	 cv::Mat img(rows, cols, CV_8U, cv::Scalar(0));
+	 // load real gt
+	 string dir_gt_sateimg = data_dir + "//gt//" + city + ".jpg";
+	 cv::Mat real_gt_satellite_img = cv::imread(dir_gt_sateimg, 0);
+
+	 cv::Mat img(rows, cols, CV_8UC1, cv::Scalar(0));
+
+	 //evaluate algorithm
+	 int count = 0;
+	 int total = 0;
 	 for (int i = 0; i < rows; i++)
 		 for (int j = 0; j < cols; j++){
-			 label_matrix[i][j] = map[i*cols + j] + 1;
-			 img.at<uchar>(i,j) = label_matrix[i][j] * 50;
+			 if (real_gt_satellite_img.at<uchar>(i, j) > 30){
+				 total++;
+				 label_matrix[i][j] = map[i*cols + j] + 1;
+				 img.at<uchar>(i, j) = label_matrix[i][j] * 63;
+				 if ((img.at<uchar>(i, j) / 63) == floor(real_gt_satellite_img.at<uchar>(i, j) / 63 + 0.5))
+					 count++;
+			 }
 		 }
-	string dir_img = data_dir + "//satellite//crf3_" + city + ".jpg";
-	imwrite("crf3_" + city+".jpg", img);
-	imwrite(dir_img, img);
-	 
-	 
+	 cout << "Performance: " << count * 1.0 / total;
+
+	 string dir_img = data_dir + "//output//" + city + "_crf3_" + std::to_string(ho_enabled) + "_" + std::to_string(pairewise_enabled) + "_" + 
+		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + " _" + std::to_string(iteration) + "_" + std::to_string(count * 1.0 / total) + ".jpg";
+	 imwrite(dir_img, img);
 
 	 crf.clearMemory();
 	 delete[] unary;
-	 /*delete[] gaussian;
-	 delete[] surface;*/
+	 delete[] gaussian;
+	 delete[] bilateral;
 	 delete[] map;
 }
 
-//void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
-//	int num_of_labels = 4;
-//
-//	//cout << "solving image " << files << ": " << dataset->testImageFiles[files] << endl;
-//
-//	short * map = new short[rows*cols];
-//	DenseCRF2D crf_plane(cols, rows, num_of_labels);
-//
-//	float* unary = new float[rows*cols];
-//	//N: height, rows
-//	//M: width, cols
-//	for (int i = 0; i < rows; ++i) {
-//		for (int k = 0; k < cols; ++k) {
-//		    unary[i * cols + k] = -log(pdf_vec[i][k]);
-//		    if (std::isnan(unary[i * cols + k]))
-//		        unary[i * cols + k] = std::numeric_limits<float>::infinity();
-//		}
-//	}
-//
-//	im_orig = new unsigned char[3 * rows*cols];
-//
-//	unsigned char *im = rgbImage.GetData();
-//	long offset = 3 * rows*cols;
-//
-//	for (int i = 0; i < rows; i++)
-//	{
-//		for (int j = 0; j < cols; j++)
-//		{
-//			im_orig[offset + 3 * ((rows - (i + 1))*cols + j) + 0] = im[3 * (i*cols + j) + 0];
-//			im_orig[offset + 3 * ((rows - (i + 1))*cols + j) + 1] = im[3 * (i*cols + j) + 1];
-//			im_orig[offset + 3 * ((rows - (i + 1))*cols + j) + 2] = im[3 * (i*cols + j) + 2];
-//		}
-//	}
-//
-//
-//	// unary
-//	crf_plane.setUnaryEnergy(unary);
-//
-//	// pairwise
-//	crf_plane.addPairwiseGaussian(3, 3, 3);
-//	crf_plane.addPairwiseBilateral(50, 50, 15, 15, 15, im_orig, 5);
-//
-//	int ho_on = 0;
-//	int ho_det = 0;
-//	int ho_cooc = 0;
-//
-//	//// set PN potts ho_order
-//	// ho_on = 1;
-//	crf_plane.set_ho(ho_on);
-//	if (ho_on) {
-//		set_ho_layers();
-//		crf_plane.ho_mem_init(imagewidth, imageheight, layers_dir, num_of_layers, ho_stats_pot, ho_seg_ext, ho_sts_ext, 0.0006, 1.0);
-//		crf_plane.readSegments(dataset->testImageFiles[files]);
-//	}
-//
-//	////set ho_det
-//	// ho_det = 1;
-//	crf_plane.set_hodet(ho_det);
-//	if (ho_det) {
-//		set_det_layers();
-//		crf_plane.det_ho_mem_init(imagewidth, imageheight, det_seg_dir, det_bb_dir, det_seg_ext, det_bb_ext, 0.00005, 1.0);
-//		crf_plane.det_readSegmentIndex(dataset->testImageFiles[files]);
-//	}
-//
-//	//// cooccurrence
-//	// ho_cooc = 1;
-//	crf_plane.set_hocooc(ho_cooc);
-//	if (ho_cooc) {
-//		crf_plane.setco_occurrence(cooc_unary, cooc_pairwise, 10.0);
-//	}
-//
-//	// start inference 
-//	clock_t start = clock();
-//	crf_plane.map(5, map);
-//	clock_t end = clock();
-//	printf("time taken %f\n", (end - start) / (float)CLOCKS_PER_SEC);
-//
-//	crf_plane.del_mem_higherorder();
-//
-//	// save the output
-//	labelToRGB(map, dataset->testImageFiles[files]);
-//
-//	del_meminit();
-//	delete[] map;
-//
-//
-//	string output;
-//
-//	if (outOpt->count == 0) {
-//		output = string(dataset->testFolder) + "denseho.txt";
-//	}
-//	else {
-//		output = *outOpt->filename;
-//	}
-//
-//	evaluateGroundTruth(dataset, dataset->testImageFiles, output);
-//
-//	cout << endl << endl << "finished with processing"
-//		<< endl << endl << "Results are stored in '" << output << "'" << endl;
-//
-//	delete dataset;
-//}
-//
-//static bool ReadProbability(float4** prob, int width, int height, int num_class,
-//	Image<DiscretePdf> &img) {
-//
-//	// each pixel stores a probability distribution
-//	img.alloc(width, height);
-//	for (int y = 0; y < height; ++y)
-//		for (int x = 0; x < width; ++x)
-//			img(x, y).resize(num_class);
-//
-//	for (int y = 0, i = 0; y < height; ++y) {
-//		for (int x = 0; x < width; ++x, ++i) {
-//			img(x, y)[0] = prob[y][x].x;
-//			img(x, y)[1] = prob[y][x].y;
-//			img(x, y)[2] = prob[y][x].z;
-//			img(x, y)[3] = prob[y][x].w;
-//		}
-//	}
-//
-//	for (int y = 0; y < height; ++y)
-//		for (int x = 0; x < width; ++x) {
-//			float s = img(x, y).sum();
-//			if (s > 0.0f && s < 0.9f) {
-//				std::cout << "Pdf not normalized: " << s << std::endl;
-//			}
-//			img(x, y).normalize();
-//		}
-//
-//	return true;
-//}
+void UrbanObject::GenerateText(string data_dir, string city){
+	//cout << "do generation";
+	//string dir0 = data_dir + "//DNN//" + city + "//1.jpg";
+	//string dir1 = data_dir + "//DNN//" + city + "//2.jpg";
+	//string dir2 = data_dir + "//DNN//" + city + "//3.jpg";
+	//string dir3 = data_dir + "//DNN//" + city + "//4.jpg";
+	//string gt_dir = data_dir + "//gt//" + city + ".jpg";
+	//cv::Mat img0 = cv::imread(dir0, 0);
+	//cv::Mat img1 = cv::imread(dir1, 0);
+	//cv::Mat img2 = cv::imread(dir2, 0);
+	//cv::Mat img3 = cv::imread(dir3, 0);
+	//cv::Mat gt = cv::imread(gt_dir, 0);
+	////// save to distance transform to text file
+	//ofstream infile((data_dir + "//" + city + "_regen.txt"));
+	//int rows = img0.rows;
+	//int cols = img0.cols;
+	//infile << rows << " " << cols << endl;
+	//for (int i = 0; i < rows; i++) {
+	//	for (int j = 0; j < cols; j++)
+	//	{
+	//		if (gt.at<uchar>(i, j) >30){
+	//			double sum = img0.at<uchar>(i, j) + img1.at<uchar>(i, j) + img2.at<uchar>(i, j) + img3.at<uchar>(i, j);
+	//			infile << img0.at<uchar>(i, j) / sum << " " << img1.at<uchar>(i, j) / sum
+	//				<< " " << img2.at<uchar>(i, j) / sum << " " << img3.at<uchar>(i, j) / sum << " " << floor(gt.at<uchar>(i, j) / 64 + 0.5) << " ";
+	//		}
+	//		else
+	//			infile << "0 0 0 0 0 ";
+	//	}
+	//	infile << endl;
+	//}
+	//infile.close();
+
+	cout << "do generation";
+	string dir0 = data_dir + "//DNN//" + city + "//1.jpg";
+	string dir1 = data_dir + "//DNN//" + city + "//2.jpg";
+	string dir2 = data_dir + "//DNN//" + city + "//3.jpg";
+	string dir3 = data_dir + "//DNN//" + city + "//4.jpg";
+	string gt = data_dir + "//gt//" + city + ".jpg";
+	cv::Mat gt_img = cv::imread(gt, 0);
+	cv::Mat img0 = cv::imread(dir0, 0);
+	cv::Mat img1 = cv::imread(dir1, 0);
+	cv::Mat img2 = cv::imread(dir2, 0);
+	cv::Mat img3 = cv::imread(dir3, 0);
+	int rows = img0.rows;
+	int cols = img0.cols;
+	int count = 0;
+	int total = 0;
+	cv::Mat prop_img(rows, cols, CV_8UC1, cv::Scalar(0));
+	// save to distance transform to text file
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++)
+		{
+			if (gt_img.at<uchar>(i, j) >30){
+				total++;
+				int m = max(max(img0.at<uchar>(i, j), img1.at<uchar>(i, j)), max(img2.at<uchar>(i, j), img3.at<uchar>(i, j)));
+				if (img0.at<uchar>(i, j) == m)
+					prop_img.at<uchar>(i, j) = 60;
+				else if (img1.at<uchar>(i, j) == m)
+					prop_img.at<uchar>(i, j) = 120;
+				else if (img2.at<uchar>(i, j) == m)
+					prop_img.at<uchar>(i, j) = 180;
+				else
+					if (img3.at<uchar>(i, j) == m)
+						prop_img.at<uchar>(i, j) = 240;
+				int a = prop_img.at<uchar>(i, j);
+				int b = gt_img.at<uchar>(i, j);
+				int c = floor(gt_img.at<uchar>(i, j) / 64 + 0.5);
+
+				if ((prop_img.at<uchar>(i, j) / 60) == floor(gt_img.at<uchar>(i, j) / 64 + 0.5))
+					count++;
+			}
+		}
+	}
+	cout << "Accuracy: " << count*1.0 / total;
+	string prop_dir_img = data_dir + "//output//prop_4imgs_" + city + ".jpg";
+	imwrite(prop_dir_img, prop_img);
+}
