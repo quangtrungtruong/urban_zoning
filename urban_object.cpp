@@ -431,9 +431,9 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 crf.setUnaryEnergy(unary);
 
 	 if (pairewise_enabled){
-		 crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
-         crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
-		 //crf.addPairwiseEnergy(param_w);
+		 //crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
+         //crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
+		 crf.addPairwiseEnergy(param_w);
 	 }
 
 	 if (ho_enabled) {

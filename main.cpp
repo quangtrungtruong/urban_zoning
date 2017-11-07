@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
 					<< (bos_acc5+ nyc_acc5 + sfo_acc5) / 3 << " " << (bos_acc6+ nyc_acc6 + sfo_acc6) / 3 << endl;
 				}*/
 
-        for (int i=1; i<4;i++)
+        for (int i=0; i<10;i++)
         {
-            w = 10*i;
-            float param_w = 0.4;
+            w = 10;
+            float param_w = i*pow(10,-6);
             cout << "BOS" << endl;
             bos.RunDenseCRF(true, pairewise_enabled, 0.2, 0.8, w, iteration, gaussian_w, bilateral_w, param_w);
             bos_acc1 = bos.acc;
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
             //<< " " << (bos_acc3+ nyc_acc3 + sfo_acc3) / 3 << " " << (bos_acc4+ nyc_acc4 + sfo_acc4) / 3 << " "
             //<< (bos_acc5+ nyc_acc5 + sfo_acc5) / 3 << " " << (bos_acc6+ nyc_acc6 + sfo_acc6) / 3 << endl;
             //cout << endl << (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " "  << (bos_acc3+ nyc_acc3 + sfo_acc3) / 3 << " " << (bos_acc4+ nyc_acc4 + sfo_acc4) / 3 << endl;
-            cout << endl << w << " " << (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " " << (bos_acc2 + nyc_acc2 + sfo_acc2) / 3 << endl;
+			cout << endl << param_w << " " << (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " " << (bos_acc2 + nyc_acc2 + sfo_acc2) / 3 << endl;
         }
 	}
 
