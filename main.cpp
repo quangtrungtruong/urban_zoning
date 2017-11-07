@@ -90,9 +90,9 @@ int main(int argc, char* argv[]) {
 					<< (bos_acc5+ nyc_acc5 + sfo_acc5) / 3 << " " << (bos_acc6+ nyc_acc6 + sfo_acc6) / 3 << endl;
 				}*/
 
-        for (int i=0; i<3;i++)
+        for (int i=1; i<4;i++)
         {
-            w = 50*i;
+            w = 10*i;
             float param_w = 0.4;
             cout << "BOS" << endl;
             bos.RunDenseCRF(true, pairewise_enabled, 0.2, 0.8, w, iteration, gaussian_w, bilateral_w, param_w);

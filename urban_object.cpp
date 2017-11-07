@@ -387,15 +387,6 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 if (ho_enabled) {
 		 propose_regions_fast(geotagged_info, num_geotaggeds, rows, cols, w, proposed_regions);
 	 }
-		 /*cv::Mat proposed_img = cv::Mat(rows, cols, CV_8UC1, cv::Scalar(0));
-		 for (int i=0; i< num_geotaggeds;i++)
-		 {
-		 	for (int j=0;j<proposed_regions[i].indices.size();j++)
-		 		proposed_img.at<uchar>(proposed_regions[i].indices[j]/cols,proposed_regions[i].indices[j]%cols) = (proposed_regions[i].type+1)*63;
-		 }
-
-		 string dir_img1 = data_dir + "//output//" + city + "_proposed_region1.jpg";
-		 imwrite(dir_img1, proposed_img);*/
 
 	 int N = pixel_num;
 	 int M = pdf_vec[0].size();
@@ -441,7 +432,8 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 
 	 if (pairewise_enabled){
 		 crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
-         //crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
+         crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
+		 //crf.addPairwiseEnergy(param_w);
 	 }
 
 	 if (ho_enabled) {
@@ -492,51 +484,4 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 delete[] gaussian;
 	 delete[] bilateral;
 	 delete[] map;
-}
-
-void UrbanObject::GenerateText(string data_dir, string city){
-	cout << "do generation";
-	string dir0 = data_dir + "//DNN//" + city + "//1.jpg";
-	string dir1 = data_dir + "//DNN//" + city + "//2.jpg";
-	string dir2 = data_dir + "//DNN//" + city + "//3.jpg";
-	string dir3 = data_dir + "//DNN//" + city + "//4.jpg";
-	string gt = data_dir + "//gt//" + city + ".jpg";
-	cv::Mat gt_img = cv::imread(gt, 0);
-	cv::Mat img0 = cv::imread(dir0, 0);
-	cv::Mat img1 = cv::imread(dir1, 0);
-	cv::Mat img2 = cv::imread(dir2, 0);
-	cv::Mat img3 = cv::imread(dir3, 0);
-	int rows = img0.rows;
-	int cols = img0.cols;
-	int count = 0;
-	int total = 0;
-	cv::Mat prop_img(rows, cols, CV_8UC1, cv::Scalar(0));
-	// save to distance transform to text file
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++)
-		{
-			if (gt_img.at<uchar>(i, j) >30){
-				total++;
-				int m = max(max(img0.at<uchar>(i, j), img1.at<uchar>(i, j)), max(img2.at<uchar>(i, j), img3.at<uchar>(i, j)));
-				if (img0.at<uchar>(i, j) == m)
-					prop_img.at<uchar>(i, j) = 60;
-				else if (img1.at<uchar>(i, j) == m)
-					prop_img.at<uchar>(i, j) = 120;
-				else if (img2.at<uchar>(i, j) == m)
-					prop_img.at<uchar>(i, j) = 180;
-				else
-					if (img3.at<uchar>(i, j) == m)
-						prop_img.at<uchar>(i, j) = 240;
-				int a = prop_img.at<uchar>(i, j);
-				int b = gt_img.at<uchar>(i, j);
-				int c = floor(gt_img.at<uchar>(i, j) / 64 + 0.5);
-
-				if ((prop_img.at<uchar>(i, j) / 60) == floor(gt_img.at<uchar>(i, j) / 64 + 0.5))
-					count++;
-			}
-		}
-	}
-	cout << "Accuracy: " << count*1.0 / total;
-	string prop_dir_img = data_dir + "//output//prop_4imgs_" + city + ".jpg";
-	imwrite(prop_dir_img, prop_img);
 }
