@@ -55,6 +55,10 @@ void UrbanObject::Init() {
 	LoadSatelliteGeotagged();
 	ComputeProbability();
 	ConvertNearestZoneTypeVec();
+
+	Preprocess(pdf_vec);
+	//Preprocess(nearest_p_vec);
+
 	cout << "Initialization done." << endl;
 }
 
@@ -110,73 +114,88 @@ void UrbanObject::LoadSatelliteGeotagged(){
 	if (geotagged_fin.is_open())
 	{
 		geotagged_fin >> num_geotaggeds;
+		cout << "Number of geotagged is " << num_geotaggeds << endl;
 		geotagged_prob = new float4[num_geotaggeds];
 		geotagged_info = new int4[num_geotaggeds];
 		std::string delimiter = ",";
-		if (geotagged_fin.is_open())
+		std::string line;
+		std::getline(geotagged_fin, line);
+
+		for (int i = 0; i < num_geotaggeds; i++)
 		{
-			geotagged_fin >> num_geotaggeds;
-			geotagged_prob = new float4[num_geotaggeds];
-			geotagged_info = new int4[num_geotaggeds];
-			std::string line;
 			std::getline(geotagged_fin, line);
+			size_t pos = 0;
+			std::string token;
+			double att;
+			// replace the position extracted of x,y when loading the geptagged text
+			geotagged_info[i].w = 0;
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_info[i].y = atoi(token.c_str());
+			line.erase(0, pos + delimiter.length());
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_info[i].x = atoi(token.c_str());
+			line.erase(0, pos + delimiter.length());
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_prob[i].x = atof(token.c_str());
+			line.erase(0, pos + delimiter.length());
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_prob[i].y = atof(token.c_str());
+			line.erase(0, pos + delimiter.length());
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_prob[i].z = atof(token.c_str());
+			line.erase(0, pos + delimiter.length());
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			geotagged_prob[i].w = atof(token.c_str());
+			line.erase(0, pos + delimiter.length());
 
-			for (int i = 0; i < num_geotaggeds; i++)
-			{
-				std::getline(geotagged_fin, line);
-				size_t pos = 0;
-				std::string token;
-				double att;
-				geotagged_info[i].w = 0;
-
+			for (int k = 0; k < 205; k++) {
 				pos = line.find(delimiter);
 				token = line.substr(0, pos);
-				geotagged_info[i].x = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_info[i].y = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_prob[i].x = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_prob[i].y = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_prob[i].z = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_prob[i].w = atoi(token.c_str());
-				line.erase(0, pos + delimiter.length());
-
-				for (int k = 0; k < 205; k++) {
-					pos = line.find(delimiter);
-					token = line.substr(0, pos);
-					line.erase(0, pos + delimiter.length());
-				}
-
-				pos = line.find(delimiter);
-				token = line.substr(0, pos);
-				geotagged_info[i].z = atoi(token.c_str());
 				line.erase(0, pos + delimiter.length());
 			}
+
+			pos = line.find(delimiter);
+			token = line.substr(0, pos);
+			line.erase(0, pos + delimiter.length());
+
+			// point out the predicted type of geotaggede photo
+			float m = max(max(geotagged_prob[i].x, geotagged_prob[i].y), max(geotagged_prob[i].z, geotagged_prob[i].w));
+			if (geotagged_prob[i].x==m)
+				geotagged_info[i].z = 0;
+			else if (geotagged_prob[i].y == m)
+				geotagged_info[i].z = 1;
+			else if (geotagged_prob[i].z == m)
+				geotagged_info[i].z = 2;
+			else 
+				geotagged_info[i].z = 3;
 		}
 		
 		cv::Mat satellite_img = cv::imread(dir_sateimg);
+		cv::Mat satellite_img_gray;
+		int ddepth = CV_16S;
+		cv::cvtColor(satellite_img, satellite_img_gray, CV_BGR2GRAY);
+		cv::Mat grad_x, grad_y, grad;
+		cv::Mat abs_grad_x, abs_grad_y;
+		/// Gradient X
+		Sobel(satellite_img_gray, grad_x, ddepth, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT);
+		/// Gradient Y
+		Sobel(satellite_img_gray, grad_y, ddepth, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT);
+		convertScaleAbs(grad_x, abs_grad_x);
+		convertScaleAbs(grad_y, abs_grad_y);
+		/// Total Gradient (approximate)
+		addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad);
 
 		pixel_vec.clear();
-		for (int i = 0; i < cols; i++) {
-			for (int j = 0; j < rows; j++) 
-			{ 
-				pixel_vec.push_back(make_float4(satellite_img.at<cv::Vec3b>(j, i)[0], satellite_img.at<cv::Vec3b>(j, i)[1], satellite_img.at<cv::Vec3b>(j, i)[2]));
-			}
-				
-		}
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				//pixel_vec.push_back(make_float4(satellite_img.at<cv::Vec3b>(i, j).val[0], satellite_img.at<cv::Vec3b>(i, j).val[1], satellite_img.at<cv::Vec3b>(i, j).val[2]));
+				pixel_vec.push_back(make_float4(abs_grad_x.at<uchar>(i, j), abs_grad_y.at<uchar>(i, j), abs_grad_y.at<uchar>(i, j) != 0 ? (abs_grad_x.at<uchar>(i, j)*1.0 / abs_grad_y.at<uchar>(i, j)) : 0, satellite_img_gray.at<uchar>(i, j)));
 
 		satellite_fin.close();
 		geotagged_fin.close();
@@ -198,6 +217,17 @@ void UrbanObject::ConvertNearestZoneTypeVec(){
 			nearest_p_vec[i*cols + j][2] = nearest_distance[i][j].z;
 			nearest_p_vec[i*cols + j][3] = nearest_distance[i][j].w;
 		}
+
+	for (int v = 0; v < pixel_num; ++v) {
+		float sum = 0.0f;
+		for (int k = 0; k < num_class; ++k) {
+			nearest_p_vec[v][k] += 1.0f;
+			sum += nearest_p_vec[v][k];
+		}
+		for (int k = 0; k < num_class; ++k) {
+			nearest_p_vec[v][k] /= sum;
+		}
+	}
 }
 
 void UrbanObject::ComputeProbability() {
@@ -315,7 +345,7 @@ int t_reconst(int m, int n, int index, float* p)
 	return 1;
 }
 
-void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double anpha, double beta, int w, int iteration) {
+void UrbanObject::Preprocess(std::vector<DiscretePdf> &prop_vec){
 	int* b = coefficients;
 	for (int n = 0; n <= DENOMINATOR; ++n) {
 		binomial[n] = b;
@@ -332,28 +362,40 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	Stats stats;
 	stats.tic();
 	for (int v = 0; v < pixel_num; ++v) {
-		pdf_vec[v].normalize();
-		int index = t_quant(num_class, denominator, pdf_vec[v].data());
-		auto pdf = pdf_vec[v];
-		if (!t_reconst(num_class, denominator, index, pdf_vec[v].data()))
+		prop_vec[v].normalize();
+		int index = t_quant(num_class, denominator, prop_vec[v].data());
+		auto pdf = prop_vec[v];
+		if (!t_reconst(num_class, denominator, index, prop_vec[v].data()))
 			printf("Wrong index.\n");
 
-		 pdf_vec[v].normalize();
-		 double error = 0.0f;
-		 for (int k = 0; k < num_class; ++k) {
-		     xentropy += -pdf[k] * log(fmaxf(pdf_vec[v][k], 1e-15));
-		     error += (pdf[k] - pdf_vec[v][k]) * (pdf[k] - pdf_vec[v][k]);
-		 }
-		 l2 += sqrtf(error);
+		prop_vec[v].normalize();
+		double error = 0.0f;
+		for (int k = 0; k < num_class; ++k) {
+			xentropy += -pdf[k] * log(fmaxf(prop_vec[v][k], 1e-15));
+			error += (pdf[k] - prop_vec[v][k]) * (pdf[k] - prop_vec[v][k]);
+		}
+		l2 += sqrtf(error);
 	}
 	printf("Average xentropy error: %lf\n", xentropy / pixel_num);
 	printf("Average L2 error: %lf\n", l2 / pixel_num);
 	stats.toc("Compression");
+}
 
+void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double anpha, double beta, int w, int iteration, float gaussian_w, float bilateral_w, float param_w) {
 	 std::vector<region> proposed_regions;
+
 	 if (ho_enabled) {
 		 propose_regions_fast(geotagged_info, num_geotaggeds, rows, cols, w, proposed_regions);
 	 }
+		 /*cv::Mat proposed_img = cv::Mat(rows, cols, CV_8UC1, cv::Scalar(0));
+		 for (int i=0; i< num_geotaggeds;i++)
+		 {
+		 	for (int j=0;j<proposed_regions[i].indices.size();j++)
+		 		proposed_img.at<uchar>(proposed_regions[i].indices[j]/cols,proposed_regions[i].indices[j]%cols) = (proposed_regions[i].type+1)*63;
+		 }
+
+		 string dir_img1 = data_dir + "//output//" + city + "_proposed_region1.jpg";
+		 imwrite(dir_img1, proposed_img);*/
 
 	 int N = pixel_num;
 	 int M = pdf_vec[0].size();
@@ -362,7 +404,9 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 float* unary = new float[N * M];
 	 for (int i = 0; i < N; ++i) {
 		 for (int k = 0; k < M; ++k) {
-			 unary[i * M + k] = anpha*(-log(pdf_vec[i][k])) + beta*log(1 / nearest_p_vec[i][k]);
+			 double term1 = pdf_vec[i][k] != 0 ? pdf_vec[i][k] : std::numeric_limits< double >::min();
+			 double term3 = nearest_p_vec[i][k] != 1 ? 1-nearest_p_vec[i][k] : std::numeric_limits< double >::min();
+			 unary[i * M + k] = anpha*(-log(term1)) - beta*log(term3);
 			 if (std::isnan(unary[i * M + k]))
 				 unary[i * M + k] = std::numeric_limits<float>::infinity();
 		 }
@@ -371,35 +415,33 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 // feature vector for bilateral filtering inside CRF
 
 	 float* gaussian = new float[N * 2];
-	 const float sx = 3;
-	 const float sy = 3;
+	 const float sx = 1;
+	 const float sy = 1;
 	 for (int i = 0; i < rows; ++i)
 		 for (int j = 0; j < cols; ++j){
-		 gaussian[(i * cols + j) * 2 + 0] = i / sx;
-		 gaussian[(i * cols + j) * 2 + 1] = j / sy;
+		 gaussian[(i * cols + j) * 2 + 0] = i/sx;
+		 gaussian[(i * cols + j) * 2 + 1] = j/sy;
 	 }
 
 	 float* bilateral = new float[N * 5];
-	 const float bsx = 50;
-	 const float bsy = 50;
-	 const float sr = 15;
-	 const float sg = 15;
-	 const float sb = 15;
+	 const float bsx = 1;
+	 const float bsy = 1;
+	 const float s = 1;
 	 for (int i = 0; i < rows; ++i)
 		 for (int j = 0; j < cols; ++j){
 			 bilateral[(i * cols + j) * 5 + 0] = i / bsx;
 			 bilateral[(i * cols + j) * 5 + 1] = j / bsy;
-			 bilateral[(i * cols + j) * 5 + 2] = pixel_vec[i * cols + j].x / sr;
-			 bilateral[(i * cols + j) * 5 + 3] = pixel_vec[i * cols + j].y / sg;
-			 bilateral[(i * cols + j) * 5 + 4] = pixel_vec[i * cols + j].z / sb;
+			 bilateral[(i * cols + j) * 5 + 2] = pixel_vec[i * cols + j].x / s;
+			 bilateral[(i * cols + j) * 5 + 3] = pixel_vec[i * cols + j].y / s;
+			 bilateral[(i * cols + j) * 5 + 4] = pixel_vec[i * cols + j].z / s;
 	 }
 
 	DenseCRF crf(N, M);
 	 crf.setUnaryEnergy(unary);
 
 	 if (pairewise_enabled){
-		 crf.addPairwiseEnergy(gaussian, 2, 3.0f); // pairwise gaussian
-		 crf.addPairwiseEnergy(bilateral, 5, 4.0f); // pairwise bilateral
+		 crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
+         //crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
 	 }
 
 	 if (ho_enabled) {
@@ -431,6 +473,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 				 total++;
 				 label_matrix[i][j] = map[i*cols + j] + 1;
 				 img.at<uchar>(i, j) = label_matrix[i][j] * 63;
+				 
 				 if ((img.at<uchar>(i, j) / 63) == floor(real_gt_satellite_img.at<uchar>(i, j) / 63 + 0.5))
 					 count++;
 			 }
@@ -438,8 +481,11 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 cout << "Performance: " << count * 1.0 / total;
 
 	 string dir_img = data_dir + "//output//" + city + "_crf3_" + std::to_string(ho_enabled) + "_" + std::to_string(pairewise_enabled) + "_" + 
-		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + " _" + std::to_string(iteration) + "_" + std::to_string(count * 1.0 / total) + ".jpg";
+		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + "_" + std::to_string(gaussian_w) + " " + std::to_string(bilateral_w) + 
+		 " _" + std::to_string(iteration) + "_" + std::to_string(count * 1.0 / total) + "_" + std::to_string(param_w) + ".jpg";
 	 imwrite(dir_img, img);
+
+	 acc = count * 1.0 / total;
 
 	 crf.clearMemory();
 	 delete[] unary;
@@ -449,37 +495,6 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 }
 
 void UrbanObject::GenerateText(string data_dir, string city){
-	//cout << "do generation";
-	//string dir0 = data_dir + "//DNN//" + city + "//1.jpg";
-	//string dir1 = data_dir + "//DNN//" + city + "//2.jpg";
-	//string dir2 = data_dir + "//DNN//" + city + "//3.jpg";
-	//string dir3 = data_dir + "//DNN//" + city + "//4.jpg";
-	//string gt_dir = data_dir + "//gt//" + city + ".jpg";
-	//cv::Mat img0 = cv::imread(dir0, 0);
-	//cv::Mat img1 = cv::imread(dir1, 0);
-	//cv::Mat img2 = cv::imread(dir2, 0);
-	//cv::Mat img3 = cv::imread(dir3, 0);
-	//cv::Mat gt = cv::imread(gt_dir, 0);
-	////// save to distance transform to text file
-	//ofstream infile((data_dir + "//" + city + "_regen.txt"));
-	//int rows = img0.rows;
-	//int cols = img0.cols;
-	//infile << rows << " " << cols << endl;
-	//for (int i = 0; i < rows; i++) {
-	//	for (int j = 0; j < cols; j++)
-	//	{
-	//		if (gt.at<uchar>(i, j) >30){
-	//			double sum = img0.at<uchar>(i, j) + img1.at<uchar>(i, j) + img2.at<uchar>(i, j) + img3.at<uchar>(i, j);
-	//			infile << img0.at<uchar>(i, j) / sum << " " << img1.at<uchar>(i, j) / sum
-	//				<< " " << img2.at<uchar>(i, j) / sum << " " << img3.at<uchar>(i, j) / sum << " " << floor(gt.at<uchar>(i, j) / 64 + 0.5) << " ";
-	//		}
-	//		else
-	//			infile << "0 0 0 0 0 ";
-	//	}
-	//	infile << endl;
-	//}
-	//infile.close();
-
 	cout << "do generation";
 	string dir0 = data_dir + "//DNN//" + city + "//1.jpg";
 	string dir1 = data_dir + "//DNN//" + city + "//2.jpg";

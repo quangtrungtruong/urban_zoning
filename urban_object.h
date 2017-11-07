@@ -74,13 +74,15 @@ struct UndoStack {
 class UrbanObject {
 public:
 	UrbanObject(const char*, const char*);
+	UrbanObject();
 	virtual ~UrbanObject();
 
 	void GenerateVirtualViews();
 	void GenerateDisperancyViews();
 	void ShowMesh();
 	void GraphcutAndMRF(bool has_vertex_color = false);
-	void RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, double beta);
+	void RunDenseCRF(bool ho_enabled, bool cooc_enabled, double anpha, double beta, int w, int iteration, float gaussian_w, float bilateral_w, float param);
+	void GenerateText(string data_dir, string city);
 	void ComputeProbability();
 	void ConvertNearestZoneTypeVec();
 	bool AskForSave();
@@ -112,6 +114,7 @@ public:
 	vector<float4> pixel_vec;
 	int** label_matrix;
 
+	float acc = 0;
 	string city;
 	string data_dir;
 	map<string, string> param;
@@ -163,6 +166,7 @@ public:
 	float4 example_centroid;
 
 	std::vector<DiscretePdf> pdf_vec; 
+	void Preprocess(std::vector<DiscretePdf> &prop_vec);
 	std::vector<DiscretePdf> nearest_p_vec;
 
 public:
