@@ -44,39 +44,6 @@ static std::string display_mode_string[UrbanObject::DisplayMode::NUM_DISPLAY_MOD
 };
 
 UrbanObject::UrbanObject(const char* data_dir, const char* city) {
-	/*
-	string str = argv;
-	if (str.find("/") == string::npos) {
-	// input is a name of the dataset
-	dataset = argv;
-	}
-	else {
-
-	// input is a path to the dataset folder or a mesh file in the dataset folder
-	data_dir = argv;
-
-	fs::path path(data_dir);
-	if (fs::is_directory(path) == false) {
-	mesh_file = path.filename().string();
-	data_dir = path.remove_filename().string();
-	}
-
-	if (data_dir.back() != '/') data_dir += "/";
-	size_t last = data_dir.length() - 1;
-	size_t pos = data_dir.rfind("/", data_dir.length() - 2);
-
-	if (pos == string::npos) {
-	throw std::runtime_error("Invalid input path");
-	}
-
-	dataset = data_dir.substr(pos + 1, last - pos - 1);
-	std::cout << "Dataset: " << dataset << std::endl;
-
-	if (mesh_file == "") {
-	mesh_file = dataset + ".ply";
-	}
-	}
-	*/
 	this->data_dir = data_dir;
 	this->city = city;
 
@@ -102,15 +69,6 @@ void UrbanObject::Init() {
 	param.clear();
 
 	LoadSatelliteGeotagged();
-
-	/*
-	// turn into absolute path to avoid confusion
-	if (data_dir[0] != '/' && data_dir[1] != ':') {
-	std::ostringstream oss;
-	oss << boost::filesystem::current_path().string();
-	oss << "/" << data_dir;
-	data_dir = oss.str();
-	}*/
 
 	rows = atoi(param["rows"].c_str());
 	cols = atoi(param["cols"].c_str());
@@ -190,198 +148,7 @@ void UrbanObject::LoadSatelliteGeotagged(){
 ////////////////////////////////////////////////////////////////////////////////
 
 int cv_rows, cv_cols;
-/*void UrbanObject::Replay(string type, bool has_color)
-{
-	file_correct = data_dir + dataset + "_correct.ply";
-	string xml_correct = data_dir + dataset + "_correct.xml";
 
-	LoadPLYWithLabel(data_dir + dataset + "_" + type + ".ply");
-	LoadCorres();
-
-	if (has_color) {
-		std::cout << "Load vertex color..." << std::endl;
-		LoadVertexColor();
-	}
-
-	for (int i = 0; i < kfs_num; ++i)
-		kfs_corres.push_back(all_corres[kfs_id[i]]);
-
-	// make a graphcut to support easy split without MRF
-	GraphSegmentation(mesh_vertex_threshold2, seg_min_size, false,
-		graphcut_color_map, graphcut_color_vec, graphcut_label_vec);
-
-	LoadAnnotation(xml_correct);
-
-	GLWindow();
-	CvUI();
-	AnnotateWindow();
-
-
-	// Replay all actions
-	std::ifstream actions;
-	actions.open(data_dir + "actions.txt");
-
-	std::cout << label_vec.size() << std::endl;
-	while (!actions.eof()) {
-		std::string time;
-		std::getline(actions, time);
-		std::cout << time << std::endl;
-
-		std::string action_type;
-		actions >> action_type;
-		std::cout << action_type << std::endl;
-
-		if (anno_window)
-			anno_window->pushState();
-
-		if (action_type == "resegment") {
-			undo_color.Insert(color_vec);
-			undo_label.Insert(label_vec);
-			anno_window->pushState();
-
-			uint root_vertex, tail_vertex;
-			actions >> root_vertex >> tail_vertex;
-			std::cout << "reseg: " << root_vertex << " " << tail_vertex << "\n";
-			ReSegment(root_vertex, tail_vertex);
-		}
-
-		if (action_type == "graphcut") {
-			undo_color.Insert(color_vec);
-			undo_label.Insert(label_vec);
-			anno_window->pushState();
-
-			std::vector<uint> vertex_id;
-			uint size;
-
-			actions >> size;
-			vertex_id.resize(size);
-			for (int i = 0; i < size; ++i) actions >> vertex_id[i];
-			RetrieveGraphcut(vertex_id);
-		}
-
-		if (action_type == "merge") {
-			undo_color.Insert(color_vec);
-			undo_label.Insert(label_vec);
-			anno_window->pushState();
-
-			std::vector<uint> lvec;
-			uint size, root_vertex;
-			actions >> size;
-			lvec.resize(size);
-			for (int i = 0; i < size; ++i) actions >> lvec[i];
-			actions >> root_vertex;
-			MergeLabels(lvec, root_vertex);
-		}
-
-		if (action_type == "undo") {
-			if (undo_color.Size() == 0) {
-				cout << "Undo stack is empty" << endl;
-			}
-			else {
-				color_vec = undo_color.Pop();
-				label_vec = undo_label.Pop();
-				anno_window->popState();
-				cv_prev_kf = -1;
-			}
-		}
-
-		std::string tmp;
-		std::getline(actions, tmp);
-	}
-}
-*/
-
-
-//void UrbanObject::ReSegment(uint root_vertex, uint tail_vertex) {
-//	// assume root and tail vertex has the same label
-//	uint label = label_vec[root_vertex];
-//
-//	vector<uint> curr_vec;
-//	vector<int> curr_map(vertex_num);         // map vertex to local index in order to build subgraph
-//	int k = 0;
-//	for (uint i = 0; i < vertex_num; ++i) {
-//		if (label_vec[i] == label) {
-//			curr_vec.push_back(i);
-//			curr_map[i] = k;
-//			k++;
-//		}
-//		else {
-//			curr_map[i] = -1;
-//		}
-//	}
-//
-//	set<pii> curr_edge;
-//	/*// V^2 E complexity, too slow when need to split a big label with ~500K points
-//	for (uint i = 0; i < curr_vec.size(); ++i) {
-//	for (uint j = i; j < curr_vec.size(); ++j) {
-//	set<pii>::iterator it = eset.find(pii(curr_vec[i], curr_vec[j]));
-//	if (it != eset.end())
-//	curr_edge.insert(pii(i, j));
-//	}
-//	}*/
-//	for (set<pii>::iterator it = eset.begin(); it != eset.end(); ++it) {
-//		pii edge = *it;
-//
-//		if (curr_map[edge.first] < 0 || curr_map[edge.second] < 0)
-//			continue;
-//		int i = curr_map[edge.first];
-//		int j = curr_map[edge.second];
-//		if (i < j)
-//			curr_edge.insert(pii(i, j));
-//		else
-//			curr_edge.insert(pii(j, i));
-//	}
-//
-//	vector<uint> curr_label(curr_vec.size());
-//	vector<float4> curr_normal(curr_vec.size());
-//	vector<uchar4> curr_rgb(curr_vec.size());
-//	for (uint i = 0; i < curr_vec.size(); ++i) {
-//		curr_normal[i] = normal_vec[curr_vec[i]];
-//		curr_rgb[i] = rgb_vec[curr_vec[i]];
-//	}
-//	SegmentMesh sm;
-//	sm.ReCompute(curr_edge, mesh_vertex_threshold2, curr_normal, curr_rgb, curr_label);
-//
-//	map<uint, uint> lmap;
-//	map<uint, uchar4> cmap;     // color map
-//	for (uint i = 0; i < curr_label.size(); ++i) {
-//		map<uint, uint>::iterator it = lmap.find(curr_label[i]);
-//		if (it == lmap.end()) {
-//			lmap.insert(make_pair(curr_label[i], curr_vec[i] + LABEL_BASE));
-//			cmap.insert(make_pair(curr_vec[i] + LABEL_BASE, RandomColor()));
-//		}
-//	}
-//
-//	if (lmap.size() > 1) {
-//		undo_color.Insert(color_vec);
-//		undo_label.Insert(label_vec);
-//		if (anno_window)
-//			anno_window->pushState();
-//
-//		for (uint i = 0; i < curr_vec.size(); ++i) {
-//			label_vec[curr_vec[i]] = lmap[curr_label[i]];
-//			color_vec[curr_vec[i]] = cmap[label_vec[curr_vec[i]]];
-//		}
-//	}
-//
-//	if (label_vec[root_vertex] == label_vec[tail_vertex]) {
-//		cout << "Warning: re-segmentation still assigns same label to root and tail vertex." << endl;
-//		return;
-//	}
-//
-//
-//	// doing graph cut alone is not enough. It will results in many small labels that needs to be merged.
-//	// try run another MRF on this subgraph?
-//	// we set the neighbor cost of the region of start and end vertex to inifinity
-//	// to prevent them from merging again
-//	MRFConstraint(curr_vec, curr_map, cmap, root_vertex, tail_vertex);
-//
-//	if (anno_window)
-//		anno_window->setUpdateRequired(true);
-//
-//	count_resegment++;
-//	undo_count.Insert(make_uint3(count_merge, count_resegment, count_graphcut));
-//}
 #define MAX_DIMENSIONS 100
 #define DENOMINATOR 100
 static int* binomial[DENOMINATOR + 1];
@@ -467,11 +234,6 @@ int t_reconst(int m, int n, int index, float* p)
 }
 
 void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
-	//Load classification score
-	/*LoadSatellite(data_dir + dataset + "_prob.ply");
-	LoadColorMapXML("nyu_color.xml", globalColormap);
-	label_vec.resize(vertex_num);
-	nyu_class_vec.resize(vertex_num);*/
 
 	int* b = coefficients;
 	for (int n = 0; n <= DENOMINATOR; ++n) {
@@ -507,14 +269,6 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	 printf("Average L2 error: %lf\n", l2 / pixel_num);
 	stats.toc("Compression");
 
-	//WritePLYWithProbability(data_dir + dataset + "_prob_quant.ply", true, true, true);
-
-
-	/* std::vector<region> proposed_regions;
-	 if (ho_enabled) {
-	     propose_regions_fast(vertex_vec, normal_vec, eset, proposed_regions);
-	 }*/
-
 	 int N = pixel_num;
 	 int M = pdf_vec[0].size();
 	 std::cout << "Labels: " << M << std::endl;
@@ -538,19 +292,6 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	     gaussian[i * 3 + 1] = pixel_vec[i].y / sy;
 	     gaussian[i * 3 + 2] = pixel_vec[i].z / sz;
 	 }
-
-	// float* surface = new float[N * 6];
-	// const float snx = 0.1;
-	// const float sny = 0.1;
-	// const float snz = 0.1;
-	// for (int i = 0; i < N; ++i) {
-	//     surface[i * 6 + 0] = vertex_vec[i].x / sx;
-	//     surface[i * 6 + 1] = vertex_vec[i].y / sy;
-	//     surface[i * 6 + 2] = vertex_vec[i].z / sz;
-	//     surface[i * 6 + 3] = normal_vec[i].x / snx;
-	//     surface[i * 6 + 4] = normal_vec[i].y / sny;
-	//     surface[i * 6 + 5] = normal_vec[i].z / snz;
-	// }
 
 	DenseCRF crf(N, M);
 	 crf.setUnaryEnergy(unary);
@@ -586,53 +327,12 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool cooc_enabled) {
 	 std::clock_t end = clock();
 	 double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	 std::cout << "CRF " << ho_enabled << " " << cooc_enabled << " time: " << elapsed_secs << std::endl;
-
-	 //for (int i = 0; i < N; ++i) {
-	 //    label_vec[i] = map[i] + 1;
-	 //    nyu_class_vec[i] = label_vec[i];
-	 //}
-
-	 //// Recolor
-	 //for (int i = 0; i < N; ++i) {
-	 //    if (globalColormap.find(label_vec[i]) == globalColormap.end()) {
-	 //        std::cout << "Label out of range: " << label_vec[i] << std::endl;
-	 //        color_vec[i] = make_uchar4(0, 0, 0);
-	 //        continue;
-	 //    }
-	 //    color_vec[i] = globalColormap[label_vec[i]].color;
-	 //}
-
-	// WritePLYWithLabel(data_dir + dataset + "_crf.ply");
-
-	// save XML
-	/*PrepareLabelMap();
-	Annotation anno;
-	vector<RegionAnno> regions;
-	this->GetRegionDataForAnnotation(regions);
-	anno.importRegions(regions);
-	anno.export_to_xml(data_dir + "_crf.xml");*/
-
-	// crf.clearMemory();
-	// delete[] unary;
-	// delete[] gaussian;
-	// delete[] surface;
-	// delete[] map;
 }
 
 void UrbanObject::ComputeProbability() {
-	//LoadPLYWithLabel(data_dir + dataset + ".ply");
 
 	std::vector<std::string> prob_list;
-	//GetFileNames(data_dir + "pred/", &prob_list);
-
-	/*std::vector<int> frames;
-	for (int i = 0; i < prob_list.size(); ++i)
-		frames.push_back(ParseFrame(prob_list[i]));
-	std::cout << "Frames with probability: " << frames.size() << std::endl;*/
-
-	/*int probWidth = 480;
-	int probHeight = 360;
-	int numClass = 37;*/
+	
 	int probWidth = cols;
 	int probHeight = rows;
 	int numClass = 4;
@@ -646,114 +346,6 @@ void UrbanObject::ComputeProbability() {
 		pdf_vec[i].setZero();
 	}
 
-	// Perform a projection on vertices that fall into the same pixel but not captured by all_corres[i]
-	// we do a soft depth test to avoid noise artifacts and have smoother texture.
-	/*ImageFloat depth_buffer;
-	Image<vector<uint> > index_buffer;
-	depth_buffer.alloc(cols, rows);
-	index_buffer.alloc(cols, rows);
-	const float DEPTH_THRESHOLD = 1e-3f;
-	const float NO_DEPTH = 1000.0f;*/
-	//for (int i = 0; i < frames.size(); ++i) {
-	//	int k = frames[i];
-	//	std::cout << "Processing frame " << k << std::endl;
-
-	//	Image<DiscretePdf> imgProb;
-	//	std::vector<DiscretePdf> vecProb;
-	//	/*if (!ReadProbability(prob_list[i], probWidth, probHeight, numClass, imgProb)) {
-	//		std::cout << "Error reading file " << prob_list[i] << std::endl;
-	//		continue;
-	//	}*/
-	//	ReadProbability(satellite_prob, probWidth, probHeight, numClass, imgProb);
-
-	//	// projection and depth test to get visible vertices
-	//	for (uint y = 0; y < rows; ++y) {
-	//		for (uint x = 0; x < cols; ++x) {
-	//			depth_buffer(x, y) = NO_DEPTH;
-	//			index_buffer(x, y).clear();
-	//		}
-	//	}
-
-	//	//for (int v = 0; v < vertex_num; ++v) {
-	//	//	float4 p = vertex_vec[v];
-	//	//	float4 c = all_pose[k].Inverse() * p;
-	//	//	if (c.z <= 0) continue;
-
-	//	//	int hx = (int)(cam_K.x * c.x / c.z + cam_K.z);
-	//	//	int hy = (int)(cam_K.y * c.y / c.z + cam_K.w);
-	//	//	if (hx < 0 || hx >= cols || hy < 0 || hy >= rows) continue;
-
-	//	//	if (fabs(c.z - depth_buffer(hx, hy)) < DEPTH_THRESHOLD) {
-
-	//	//		index_buffer(hx, hy).push_back(v);
-	//	//	}
-
-	//	//	if (c.z < depth_buffer(hx, hy) - DEPTH_THRESHOLD) {
-	//	//		depth_buffer(hx, hy) = c.z;
-	//	//		vector<uint> tmp = index_buffer(hx, hy);
-
-	//	//		index_buffer(hx, hy).clear();
-	//	//		index_buffer(hx, hy).push_back(v);
-
-	//	//		for (auto vid : tmp) {		// keep those within the new range
-	//	//			float4 p2 = vertex_vec[vid];
-	//	//			float4 c2 = all_pose[k].Inverse() * p2;
-	//	//			if (fabs(c2.z - depth_buffer(hx, hy)) < DEPTH_THRESHOLD) {
-	//	//				index_buffer(hx, hy).push_back(vid);
-	//	//			}
-	//	//		}
-
-	//	//	}
-	//	//}
-
-	//	// update per-vertex probability
-	//	for (uint y = 0; y < rows; ++y) {
-	//		for (uint x = 0; x < cols; ++x) {
-	//			if (index_buffer(x, y).size() == 0) continue;
-
-	//			for (auto vid : index_buffer(x, y)) {
-	//				// take corresponding vertex in the lower resolution probability map
-	//				int xx = (int)((float)x * probWidth / cols);
-	//				int yy = (int)((float)y * probHeight / rows);
-
-	//				/*
-	//				if (pdf_vec[vid].isValid())
-	//				pdf_vec[vid] = pdf_vec[vid] * imgProb(xx, yy);
-	//				else
-	//				pdf_vec[vid] = imgProb(xx, yy);
-	//				*/
-
-	//				//pdf_vec[vid] = pdf_vec[vid] + imgProb(xx, yy);
-	//				// int argmax_pdf = 0, argmax_img = 0;
-	//				// float max_prob_pdf = 0.0f, max_prob_img = 0;
-	//				// for (int k = 0; k < numClass; ++k) {
-	//				//     if (pdf_vec[vid][k] > max_prob_pdf) {
-	//				//         max_prob_pdf = pdf_vec[vid][k];
-	//				//         argmax_pdf = k;
-	//				//     }
-	//				//     if (imgProb(xx, yy)[k] > max_prob_img) {
-	//				//         max_prob_img = imgProb(xx, yy)[k];
-	//				//         argmax_img = k;
-	//				//     }
-	//				// }
-	//				// if (argmax_pdf != argmax_img) confidence[vid]--;
-	//				// else confidence[vid]++;
-	//				// pdf_vec[vid] = pdf_vec[vid] * imgProb(xx, yy);
-
-	//				int argmax_img = 0;
-	//				float max_prob_img = 0.0f;
-	//				for (int k = 0; k < numClass; ++k) {
-	//					if (imgProb(xx, yy)[k] > max_prob_img) {
-	//						max_prob_img = imgProb(xx, yy)[k];
-	//						argmax_img = k;
-	//					}
-	//				}
-	//				pdf_vec[vid][argmax_img] += 1.0;
-	//			}
-	//		}
-	//	}
-	//}
-
 	for (int v = 0; v < pixel_num; ++v) {
 		float sum = 0.0f;
 		for (int k = 0; k < numClass; ++k) {
@@ -764,8 +356,6 @@ void UrbanObject::ComputeProbability() {
 			pdf_vec[v][k] /= sum;
 		}
 	}
-
-	//WritePLYWithProbability(data_dir + dataset + "_prob.ply", true, true, true);
 }
 
 static bool ReadProbability(float4** prob, int width, int height, int numClass,

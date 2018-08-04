@@ -11,7 +11,6 @@ void propose_regions_fast(int4 *geotagged_info, int size, int height, int width,
     regions.resize(size);
     for(int i = 0; i < size; ++i) {
 		regions[i].indices.clear();
-        //regions[i].type = region::other;
         regions[i].type = geotagged_info[i].z;
 		int2 bottom, top;
 		bottom.x = geotagged_info[i].x - w / 2 > 0 ? geotagged_info[i].x - w / 2 : 0;

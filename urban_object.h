@@ -36,41 +36,6 @@ struct UndoStack {
 	vector<T> undo_vec;
 };
 
-	//////////////////////////////////////////////////////////////////////////////
-
-	/*inline void AscendingOrder(const uint v0, const uint v1, uint* a, uint* b) {
-		if (v0 < v1) {
-			*a = v0; *b = v1;
-		}
-		else {
-			*a = v1; *b = v0;
-		}
-	}*/
-
-	//////////////////////////////////////////////////////////////////////////////
-
-	/*inline void AddNeighbors(uint v0, uint v1, uint v2) {
-		ngb_vec[v0].insert(v1);
-		ngb_vec[v0].insert(v2);
-		ngb_vec[v1].insert(v0);
-		ngb_vec[v1].insert(v2);
-		ngb_vec[v2].insert(v0);
-		ngb_vec[v2].insert(v1);
-	}*/
-
-	//////////////////////////////////////////////////////////////////////////////
-
-	/*void Init();
-	void ParseVolume(const int4    voxels,
-		const short2* volume,
-		const bool       set_face = NULL);*/
-
-	/*void LoadPLY(string filename);
-	void LoadPLYWithLabel(string filename);
-	bool WritePLY(string filename, bool save_normal = true, bool save_color = true, bool save_face = true);
-	bool WritePLYWithLabel(string filename, bool save_normal = true, bool save_color = true, bool save_face = true);
-	void WriteLabelPLY(string filename, const set<uint> &label, bool binary = true, uchar4 color = make_uchar4(0, 0, 0, 0));*/
-
 class UrbanObject {
 public:
 	UrbanObject(const char*, const char*);
