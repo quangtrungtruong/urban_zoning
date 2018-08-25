@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8)
 project( urban_zoning )
 # where to look for .cmake for module search
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
@@ -12,6 +12,7 @@ add_executable(urban_zoning
     urban_object.cpp
     stats.cpp
     util.cpp
+    proposal.cpp
     crf/pdf.cpp
     crf/denseho/densecrf.cpp
     crf/denseho/potential.cpp
