@@ -38,23 +38,6 @@ int main(int argc, char* argv[]) {
         anpha = 0.73;
         beta = 1.0 - anpha;
         mo.RunDenseCRF(true, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        /*
-        mo_acc1 = mo.acc;
-        mo.RunDenseCRF(false, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc2 = mo.acc;
-        mo.RunDenseCRF(true, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc3 = mo.acc;
-        mo.RunDenseCRF(true, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc4 = mo.acc;
-        mo.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc5 = mo.acc;*/
-        //mo.RunDenseCRF(false, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        /*mo_acc6 = mo.acc;
-        mo.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc7 = mo.acc;
-        mo.RunDenseCRF(false, false, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-        mo_acc8 = mo.acc;
-        cout << endl << mo_acc1 << " " << mo_acc2 << " " << mo_acc3 << " " << mo_acc4 << " " << mo_acc5 << " " << mo_acc6 << " " << mo_acc7 << " " << mo_acc8 ;*/
  	} else
 	{
 		UrbanObject bos(argv[1], "BOS");
@@ -73,57 +56,17 @@ int main(int argc, char* argv[]) {
             bos_acc1 = bos.acc;
             bos.RunDenseCRF(false, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
             bos_acc2 = bos.acc;
-            /*bos.RunDenseCRF(true, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc3 = bos.acc;
-            bos.RunDenseCRF(true, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc4 = bos.acc;
-            bos.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc5 = bos.acc;
-            bos.RunDenseCRF(false, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc6 = bos.acc;
-            bos.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc7 = bos.acc;
-            bos.RunDenseCRF(false, false, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            bos_acc8 = bos.acc;*/
             cout << endl << "NYC" << endl;
             nyc.RunDenseCRF(true, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
             nyc_acc1 = nyc.acc;
             nyc.RunDenseCRF(false, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
             nyc_acc2 = nyc.acc;
-            /*nyc.RunDenseCRF(true, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc3 = nyc.acc;
-            nyc.RunDenseCRF(true, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc4 = nyc.acc;
-            nyc.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc5 = nyc.acc;
-            nyc.RunDenseCRF(false, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc6 = nyc.acc;
-            nyc.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc7 = bos.acc;
-            nyc.RunDenseCRF(false, false, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            nyc_acc8 = nyc.acc;*/
             cout << endl << "SFO" << endl;
             sfo.RunDenseCRF(true, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
             sfo_acc1 = sfo.acc;
             sfo.RunDenseCRF(false, pairewise_enabled, anpha, beta, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
             sfo_acc2 = sfo.acc;
-            /*sfo.RunDenseCRF(true, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc3 = sfo.acc;
-            sfo.RunDenseCRF(true, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc4 = sfo.acc;
-            sfo.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc5 = sfo.acc;
-            sfo.RunDenseCRF(false, pairewise_enabled, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc6 = sfo.acc;
-            sfo.RunDenseCRF(false, pairewise_enabled, 1, 0, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc7 = sfo.acc;
-            sfo.RunDenseCRF(false, false, 0, 1, size_window_term4, iteration, gaussian_w, bilateral_w, param_w, weight_term4);
-            sfo_acc8 = sfo.acc;*/
 
-            /*cout << endl << "Use existing term 2 " <<  anpha  << " " << (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " " << (bos_acc2 + nyc_acc2 + sfo_acc2) / 3
-            << " " << (bos_acc3+ nyc_acc3 + sfo_acc3) / 3 << " " << (bos_acc4+ nyc_acc4 + sfo_acc4) / 3 << " "
-            << (bos_acc5+ nyc_acc5 + sfo_acc5) / 3 << " " << (bos_acc6+ nyc_acc6 + sfo_acc6) / 3 << (bos_acc7+ nyc_acc7 + sfo_acc7) / 3 << " " << (bos_acc8+ nyc_acc8 + sfo_acc8) / 3 << endl;*/
-            //cout << endl << (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " "  << (bos_acc3+ nyc_acc3 + sfo_acc3) / 3 << " " << (bos_acc4+ nyc_acc4 + sfo_acc4) / 3 << endl;
             cout << endl << "----- Accuracy: "  << weight_term4  << " "<< (bos_acc1 + nyc_acc1 + sfo_acc1) / 3 << " "<< (bos_acc2 + nyc_acc2 + sfo_acc2) / 3  << endl;
         }
 	}

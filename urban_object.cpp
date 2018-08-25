@@ -41,8 +41,6 @@ void UrbanObject::Init() {
 
 
 void UrbanObject::LoadSatelliteGeotagged(){
-	//string dir_sat = data_dir + "//satellite//" + city + ".txt";
-	//string dir_geo = data_dir + "//geotagged//" + city + ".txt";
     string dir_sat = data_dir + "//satellite//" + city + ".txt";
     string dir_geo = data_dir + "//geotagged//" + city + ".txt";
 	string dir_sateimg = data_dir + "//satellite//" + city + ".jpg";
@@ -173,7 +171,6 @@ void UrbanObject::LoadSatelliteGeotagged(){
 		pixel_vec.clear();
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
-				//pixel_vec.push_back(make_float4(satellite_img.at<cv::Vec3b>(i, j).val[0], satellite_img.at<cv::Vec3b>(i, j).val[1], satellite_img.at<cv::Vec3b>(i, j).val[2]));
 				pixel_vec.push_back(make_float4(abs_grad_x.at<uchar>(i, j), abs_grad_y.at<uchar>(i, j), abs_grad_y.at<uchar>(i, j) != 0 ? (abs_grad_x.at<uchar>(i, j)*1.0 / abs_grad_y.at<uchar>(i, j)) : 0, satellite_img_gray.at<uchar>(i, j)));
 
 		satellite_fin.close();
@@ -418,9 +415,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 
 	 if (ho_enabled) {
 	     crf.setDetHO(1);
-	     //crf.initMemoryDetHO(0.0005, 1.0);
          crf.initMemoryDetHO(weight_term4, 0.00005, 1.0);
-         //crf.initMemoryDetHO(weight_term4, ho_param1, ho_param2);
 	     crf.setDetSegments(proposed_regions);
 	 }
 
@@ -451,7 +446,6 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
                  int gt_label = floor(real_gt_satellite_img.at<uchar>(i, j) / 63 + 0.5);
                  int predict_label = map[i*cols + j] + 1;
 
-                 //img.at<uchar>(i, j) = label_matrix[i][j] * 63;
                  if (label_matrix[i][j]==1)
                      img.at<cv::Vec3b>(i, j) = cv::Vec3b(255,64,0);
                  else if (label_matrix[i][j]==2)
@@ -508,8 +502,8 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
     float acc_label3 = count3*1.0/total3;
     cout << "Performance: " << count * 1.0 / total << endl;
     cout << "Class accuracy: " << acc_label0 << ", " << acc_label1 << ", " << acc_label2 << ", " << acc_label3 << ", average class accuracy: " << (acc_label0+acc_label1+acc_label2+acc_label3)/4 << endl;
-    //cout << "Percentage of zoning types: " << std::to_string(count0_pixel*1.0/total) << " " << std::to_string(count1_pixel*1.0/total) << " " << std::to_string(count2_pixel*1.0/total) << " " << std::to_string(count3_pixel*1.0/total);
-    //cout << "Number of zoning types: " << std::to_string(count0_pixel) << " " << std::to_string(count1_pixel) << " " << std::to_string(count2_pixel) << " " << std::to_string(count3_pixel);
+    cout << "Percentage of zoning types: " << std::to_string(count0_pixel*1.0/total) << " " << std::to_string(count1_pixel*1.0/total) << " " << std::to_string(count2_pixel*1.0/total) << " " << std::to_string(count3_pixel*1.0/total);
+    cout << "Number of zoning types: " << std::to_string(count0_pixel) << " " << std::to_string(count1_pixel) << " " << std::to_string(count2_pixel) << " " << std::to_string(count3_pixel);
 	 string dir_img = data_dir + "//output//" + city + "_crf3_" + std::to_string(ho_enabled) + "_" + std::to_string(pairewise_enabled) + "_" +
 		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + "_" + std::to_string(gaussian_w) + " " + std::to_string(bilateral_w) +
 		 " _" + std::to_string(iteration) + "_" + std::to_string(param_w)  + "_" + std::to_string(weight_term4) + "_" + std::to_string(count * 1.0 / total) + ".jpg";
