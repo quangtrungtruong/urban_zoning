@@ -73,6 +73,19 @@ public:
     void apply(float* out_values, const float* in_values, float* tmp, int value_size) const;
 };
 
+class CustomizePotential : public PairwisePotential
+{
+protected:
+	float weight_;
+	int N_;
+	float *norm_;
+public:
+	CustomizePotential(int N, float w, bool per_pixel_normalization = true);
+	~CustomizePotential();
+
+	void apply(float* out_values, const float* in_values, float*tmp, int value_size) const;
+};
+
 
 class SemiMetricPotential: public PottsPotential
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../data_types.h"
+//#include "../data_types.h"
 
 #include <vector>
 using namespace std;
@@ -39,7 +39,7 @@ public:
 
     void resize(size_t size) { 
         pdf.resize(size); 
-        memset(pdf.data(), 0, sizeof(float) * pdf.size());
+        //memset(pdf.data(), 0, sizeof(float) * pdf.size());
     }
     
     void setUniform() {
@@ -67,19 +67,6 @@ public:
     }
 
     void normalize();
-    
-    /**
-     * Return false when all probabilities are zero.
-     */
-    bool isValid() const;
-
-    std::string toString() const {
-        ostringstream oss;
-        for (int i = 0; i < pdf.size(); ++i) {
-            oss << pdf[i] << " ";
-        }
-        return oss.str();
-    }
 
 protected:
 	vector<float> pdf;

@@ -43,7 +43,7 @@
 #include <vector>
 #include <cstdlib>
 #include "potential.h"
-#include "objectness/proposal.h"
+#include "../../proposal.h"
 
 
 class DenseCRF
@@ -85,6 +85,8 @@ public:
 	// The kernel shape should be captured by transforming the
 	// features before passing them into this function
 	void addPairwiseEnergy( const float * features, int D, float w=1.0f, const SemiMetricFunction * function=NULL );
+	void addPairwiseEnergy(float param, const float * features, int D, float w=1.0f, const SemiMetricFunction * function=NULL );
+	void addPairwiseEnergy(float weight);
 
 	// Add your own favorite pairwise potential (ownwership will be transfered to this class)
 	void addPairwiseEnergy( PairwisePotential* potential );
@@ -154,13 +156,13 @@ public:
 	// start adding higher order reltated stuffs
 	void setDetHO(int);
 	char addDet;
-	float *det_higher_order, det_param1, det_param2;
+	float *det_higher_order, det_param1, det_param2, param0;
 	double *det_h_norm, *det_resp;
 	int *det_segmentIndex, det_segmentCount, *det_type;
     std::vector<region> detections_;
 	void calculateDetHOPotential();
 	void setDetSegments(const std::vector<region>& detections);
-	void initMemoryDetHO(float, float);
+	void initMemoryDetHO(float, float, float);
 	// det end
 
 public: /* Debugging functions */

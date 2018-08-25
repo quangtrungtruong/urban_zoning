@@ -39,9 +39,6 @@ void DiscretePdf::normalize() {
     }
 }
 
-bool DiscretePdf::isValid() const {
-    return ! is_zero;
-}
 
 DiscretePdf& DiscretePdf::operator*(const DiscretePdf &p) {
     if (this->size() != p.size())

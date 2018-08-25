@@ -3,11 +3,9 @@
 
 #include "densecrf.h"
 #include "fastmath.h"
-#include "util.h"
-#include <cmath>
-#include <cstring>
-#include <set>
-
+#include "../../util.h"
+#include <limits>
+#include <iostream>
 
 /////////////////////////////
 /////  Alloc / Dealloc  /////
@@ -53,6 +51,19 @@ void DenseCRF::addPairwiseEnergy (const float* features, int D, float w, const S
 		addPairwiseEnergy( new SemiMetricPotential( features, D, N_, w, function ) );
 	else
 		addPairwiseEnergy( new PottsPotential( features, D, N_, w ) );
+}
+
+void DenseCRF::addPairwiseEnergy (float param, const float* features, int D, float w, const SemiMetricFunction * function)
+{
+    if (function)
+        addPairwiseEnergy( new SemiMetricPotential( features, D, N_, w, function ) );
+    else
+        addPairwiseEnergy( new PottsPotential( features, D, N_, w ) );
+}
+
+void DenseCRF::addPairwiseEnergy(float param)
+{
+	addPairwiseEnergy(new CustomizePotential(N_, param));
 }
 
 void DenseCRF::addPairwiseEnergy ( PairwisePotential* potential )
@@ -407,11 +418,11 @@ void DenseCRF::stepInference( float relax )
 
 		for(int i = 0; i < N_*M_; i++)
 		{
-			next_[i] = next_[i] - det_higher_order[i];
+			next_[i] = next_[i] + det_higher_order[i];
 		}
 	}
-	// end det
 
+	// end det
 
 	// pairwise potentials
 	for( unsigned int i=0; i<pairwise_.size(); i++)
@@ -706,7 +717,7 @@ void DenseCRF::setDetHO(int add_det)
 	if(add_det) addDet = 1;
 }
 
-void DenseCRF::initMemoryDetHO(float detParam1, float detParam2)
+void DenseCRF::initMemoryDetHO(float param, float detParam1, float detParam2)
 {
 	if(addDet)
 	{
@@ -716,6 +727,7 @@ void DenseCRF::initMemoryDetHO(float detParam1, float detParam2)
 		}
 		det_param1 = detParam1;
 		det_param2 = detParam2;
+        param0= param;
 	}
 }
 
@@ -748,7 +760,7 @@ void DenseCRF::calculateDetHOPotential()
 
 		for(int i = 0; i < det_segmentCount; i++)
 			for(int j = 0; j < M_; j++)
-				det_h_norm[i*M_+j] = 1.0;
+ 				det_h_norm[i*M_+j] = 1.0;
 
 		for(int i = 0; i < detections_.size(); i++)
 		{
@@ -771,8 +783,6 @@ void DenseCRF::calculateDetHOPotential()
 		}
 
 		double alpha = 0.5, maxcost, weight, costdata = 0.0;
-
-        std::set<int> structure = {0, 1, 2, 7, 8, 10, 11, 12, 15, 21, 29};
 
         std::vector<float*> hists(detections_.size());
         for (int i = 0; i < detections_.size(); ++i) {
@@ -803,16 +813,14 @@ void DenseCRF::calculateDetHOPotential()
 				curr_pix_index = detections_[i].indices[j];
 
 				for (int k = 0; k < M_; k++) {
-                    float consistency_prob = (hists[i][k] - current_[curr_pix_index * M_ + k] - 0.0001) / (sum - current_[curr_pix_index * M_ + k] - 0.0001);
-                    det_higher_order[curr_pix_index * M_ + k] += -log(consistency_prob);
+                    float consistency_prob = (hists[i][k] + current_[curr_pix_index * M_ + k] - 0.0001) / (sum - current_[curr_pix_index * M_ + k] - 0.0001);
+					det_higher_order[curr_pix_index * M_ + k] -= param0*consistency_prob*log(consistency_prob);
+                    //det_higher_order[curr_pix_index * M_ + k] += (1.0 / M_)*log(consistency_prob);
 
-                    higher_order_prob = det_h_norm[i * M_ + k] / (current_[curr_pix_index * M_ + k] + 0.0001);
-					if ((detections_[i].type == region::object) && structure.find(k) != structure.end()) {
-						det_higher_order[curr_pix_index * M_ + k] += det_param1 * costdata - det_param2 * higher_order_prob;
-					}
-                    else if ((detections_[i].type == region::structure) && structure.find(k) == structure.end()) {
-                        det_higher_order[curr_pix_index *M_ + k] += det_param1 * costdata - det_param2 * higher_order_prob;
-                    }
+					/*higher_order_prob = det_h_norm[i * M_ + k] / (current_[curr_pix_index * M_ + k] + 0.0001);
+					if (detections_[i].type == k) {
+						det_higher_order[curr_pix_index * M_ + k] -= det_param1 * costdata - det_param2 * higher_order_prob;
+					}*/
 				}
 			}
 		}

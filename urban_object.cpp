@@ -3,32 +3,9 @@
 #include "stats.h"
 #include <opencv2/opencv.hpp>
 #include "crf/denseho/densecrf.h"
-#include <iostream>
 #include <fstream>
-#include <algorithm>
-#include <set>
 #include <chrono>  // chrono::system_clock
-#include <ctime>   // localtime
-#include <sstream> // stringstream
-#include <iomanip> // put_time
-#include <string>  // string
-#include <random> // necessary for generation of random floats (for SSAO sample kernel and noise texture)
-
-static std::string display_mode_string[UrbanObject::DisplayMode::NUM_DISPLAY_MODES] = {
-	"Probability",
-	"Segmentation",
-	"NYU class",
-	"Graphcut",
-	"MRF",
-	"Texture",
-	"Grey",
-	"Cloud",
-	"AABB",
-	"OBB",
-	"Image based",
-	"Reflectance",
-	"Shading"
-};
+#include <string>
 
 UrbanObject::UrbanObject(){}
 
@@ -64,8 +41,10 @@ void UrbanObject::Init() {
 
 
 void UrbanObject::LoadSatelliteGeotagged(){
-	string dir_sat = data_dir + "//satellite//" + city + ".txt";
-	string dir_geo = data_dir + "//geotagged//" + city + ".txt";
+	//string dir_sat = data_dir + "//satellite//" + city + ".txt";
+	//string dir_geo = data_dir + "//geotagged//" + city + ".txt";
+    string dir_sat = data_dir + "//satellite//" + city + ".txt";
+    string dir_geo = data_dir + "//geotagged//" + city + ".txt";
 	string dir_sateimg = data_dir + "//satellite//" + city + ".jpg";
 	string dir_distance_tran = data_dir + "//distance_transform//" + city + "_dt_";
 	ifstream satellite_fin(dir_sat.c_str());
@@ -381,7 +360,7 @@ void UrbanObject::Preprocess(std::vector<DiscretePdf> &prop_vec){
 	stats.toc("Compression");
 }
 
-void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double anpha, double beta, int w, int iteration, float gaussian_w, float bilateral_w, float param_w) {
+void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double anpha, double beta, int w, int iteration, float gaussian_w, float bilateral_w, float param_w, float weight_term4) {
 	 std::vector<region> proposed_regions;
 
 	 if (ho_enabled) {
@@ -396,7 +375,7 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 for (int i = 0; i < N; ++i) {
 		 for (int k = 0; k < M; ++k) {
 			 double term1 = pdf_vec[i][k] != 0 ? pdf_vec[i][k] : std::numeric_limits< double >::min();
-			 double term3 = nearest_p_vec[i][k] != 1 ? 1-nearest_p_vec[i][k] : std::numeric_limits< double >::min();
+			 double term3 = nearest_p_vec[i][k] != 0 ? 1/nearest_p_vec[i][k] : 1/std::numeric_limits< double >::min();
 			 unary[i * M + k] = anpha*(-log(term1)) - beta*log(term3);
 			 if (std::isnan(unary[i * M + k]))
 				 unary[i * M + k] = std::numeric_limits<float>::infinity();
@@ -414,31 +393,34 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 		 gaussian[(i * cols + j) * 2 + 1] = j/sy;
 	 }
 
-	 float* bilateral = new float[N * 5];
+	 float* bilateral = new float[N * 6];
 	 const float bsx = 1;
 	 const float bsy = 1;
 	 const float s = 1;
 	 for (int i = 0; i < rows; ++i)
 		 for (int j = 0; j < cols; ++j){
-			 bilateral[(i * cols + j) * 5 + 0] = i / bsx;
-			 bilateral[(i * cols + j) * 5 + 1] = j / bsy;
-			 bilateral[(i * cols + j) * 5 + 2] = pixel_vec[i * cols + j].x / s;
-			 bilateral[(i * cols + j) * 5 + 3] = pixel_vec[i * cols + j].y / s;
-			 bilateral[(i * cols + j) * 5 + 4] = pixel_vec[i * cols + j].z / s;
+			 bilateral[(i * cols + j) * 6 + 0] = i / bsx;
+			 bilateral[(i * cols + j) * 6 + 1] = j / bsy;
+			 bilateral[(i * cols + j) * 6 + 2] = pixel_vec[i * cols + j].x / s;
+			 bilateral[(i * cols + j) * 6 + 3] = pixel_vec[i * cols + j].y / s;
+			 bilateral[(i * cols + j) * 6 + 4] = pixel_vec[i * cols + j].w / s;
+             bilateral[(i * cols + j) * 6 + 5] = pixel_vec[i * cols + j].z *255;
 	 }
 
 	DenseCRF crf(N, M);
 	 crf.setUnaryEnergy(unary);
 
 	 if (pairewise_enabled){
-		 //crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
-         //crf.addPairwiseEnergy(bilateral, 5, 2.0 + bilateral_w); // pairwise bilateral
-		 crf.addPairwiseEnergy(param_w);
+		 crf.addPairwiseEnergy(param_w, gaussian, 2, gaussian_w); // pairwise gaussian
+         crf.addPairwiseEnergy(bilateral, 6, bilateral_w); // pairwise bilateral
+		 //crf.addPairwiseEnergy(param_w);
 	 }
 
 	 if (ho_enabled) {
 	     crf.setDetHO(1);
-	     crf.initMemoryDetHO(0.0005, 1.0);
+	     //crf.initMemoryDetHO(0.0005, 1.0);
+         crf.initMemoryDetHO(weight_term4, 0.00005, 1.0);
+         //crf.initMemoryDetHO(weight_term4, ho_param1, ho_param2);
 	     crf.setDetSegments(proposed_regions);
 	 }
 
@@ -454,28 +436,86 @@ void UrbanObject::RunDenseCRF(bool ho_enabled, bool pairewise_enabled, double an
 	 string dir_gt_sateimg = data_dir + "//gt//" + city + ".jpg";
 	 cv::Mat real_gt_satellite_img = cv::imread(dir_gt_sateimg, 0);
 
-	 cv::Mat img(rows, cols, CV_8UC1, cv::Scalar(0));
+	 cv::Mat img(rows, cols, CV_8UC3, cv::Scalar(255,255,255));
+     cv::Mat gt_img(rows, cols, CV_8UC3, cv::Scalar(0,0,0));
 
 	 //evaluate algorithm
-	 int count = 0;
-	 int total = 0;
+     int count = 0, count0 = 0, count1 = 0, count2 = 0, count3 =0;
+     int count0_pixel = 0, count1_pixel = 0, count2_pixel = 0, count3_pixel =0;
+	 int total = 0, total0 = 0, total1 = 0, total2 = 0, total3 = 0;
 	 for (int i = 0; i < rows; i++)
 		 for (int j = 0; j < cols; j++){
 			 if (real_gt_satellite_img.at<uchar>(i, j) > 30){
 				 total++;
 				 label_matrix[i][j] = map[i*cols + j] + 1;
-				 img.at<uchar>(i, j) = label_matrix[i][j] * 63;
-				 
-				 if ((img.at<uchar>(i, j) / 63) == floor(real_gt_satellite_img.at<uchar>(i, j) / 63 + 0.5))
-					 count++;
+                 int gt_label = floor(real_gt_satellite_img.at<uchar>(i, j) / 63 + 0.5);
+                 int predict_label = map[i*cols + j] + 1;
+
+                 //img.at<uchar>(i, j) = label_matrix[i][j] * 63;
+                 if (label_matrix[i][j]==1)
+                     img.at<cv::Vec3b>(i, j) = cv::Vec3b(255,64,0);
+                 else if (label_matrix[i][j]==2)
+                     img.at<cv::Vec3b>(i, j) = cv::Vec3b(255,255,0);
+                 else if (label_matrix[i][j]==3)
+                     img.at<cv::Vec3b>(i, j) = cv::Vec3b(64,255,0);
+                 else if (label_matrix[i][j]==4)
+                     img.at<cv::Vec3b>(i, j) = cv::Vec3b(0,191,255);
+
+                 if (gt_label==1)
+                     gt_img.at<cv::Vec3b>(i, j) = cv::Vec3b(255,64,0);
+                 else if (gt_label==2)
+                     gt_img.at<cv::Vec3b>(i, j) = cv::Vec3b(255,255,0);
+                 else if (gt_label==3)
+                     gt_img.at<cv::Vec3b>(i, j) = cv::Vec3b(64,255,0);
+                 else if (gt_label==4)
+                     gt_img.at<cv::Vec3b>(i, j) = cv::Vec3b(0,191,255);
+
+                 if (predict_label==1)
+                     total0++;
+                 else if (predict_label==2)
+                     total1++;
+                 else if (predict_label==3)
+                     total2++;
+                 else if (predict_label==4)
+                     total3++;
+
+				 if (predict_label == gt_label)
+                 {
+                     count++;
+                     if (gt_label==1)
+                         count0++;
+                     else if (gt_label==2)
+                         count1++;
+                     else if (gt_label==3)
+                         count2++;
+                     else if (gt_label==4)
+                         count3++;
+                 }
+
+                 if (gt_label==1)
+                     count0_pixel++;
+                 else if (gt_label==2)
+                     count1_pixel++;
+                 else if (gt_label==3)
+                     count2_pixel++;
+                 else if (gt_label==4)
+                     count3_pixel++;
 			 }
 		 }
-	 cout << "Performance: " << count * 1.0 / total;
-
-	 string dir_img = data_dir + "//output//" + city + "_crf3_" + std::to_string(ho_enabled) + "_" + std::to_string(pairewise_enabled) + "_" + 
-		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + "_" + std::to_string(gaussian_w) + " " + std::to_string(bilateral_w) + 
-		 " _" + std::to_string(iteration) + "_" + std::to_string(count * 1.0 / total) + "_" + std::to_string(param_w) + ".jpg";
+    float acc_label0 = count0*1.0/total0;
+    float acc_label1 = count1*1.0/total1;
+    float acc_label2 = count2*1.0/total2;
+    float acc_label3 = count3*1.0/total3;
+    cout << "Performance: " << count * 1.0 / total << endl;
+    cout << "Class accuracy: " << acc_label0 << ", " << acc_label1 << ", " << acc_label2 << ", " << acc_label3 << ", average class accuracy: " << (acc_label0+acc_label1+acc_label2+acc_label3)/4 << endl;
+    //cout << "Percentage of zoning types: " << std::to_string(count0_pixel*1.0/total) << " " << std::to_string(count1_pixel*1.0/total) << " " << std::to_string(count2_pixel*1.0/total) << " " << std::to_string(count3_pixel*1.0/total);
+    //cout << "Number of zoning types: " << std::to_string(count0_pixel) << " " << std::to_string(count1_pixel) << " " << std::to_string(count2_pixel) << " " << std::to_string(count3_pixel);
+	 string dir_img = data_dir + "//output//" + city + "_crf3_" + std::to_string(ho_enabled) + "_" + std::to_string(pairewise_enabled) + "_" +
+		 std::to_string(anpha) + "_" + std::to_string(beta) + "_" + std::to_string(w) + "_" + std::to_string(gaussian_w) + " " + std::to_string(bilateral_w) +
+		 " _" + std::to_string(iteration) + "_" + std::to_string(param_w)  + "_" + std::to_string(weight_term4) + "_" + std::to_string(count * 1.0 / total) + ".jpg";
 	 imwrite(dir_img, img);
+    string dir_gt_img = data_dir + "//output//" + city  + ".jpg";
+    imwrite(dir_gt_img, gt_img);
 
 	 acc = count * 1.0 / total;
 
