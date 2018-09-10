@@ -17,6 +17,5 @@ add_executable(urban_zoning
     crf/denseho/densecrf.cpp
     crf/denseho/potential.cpp
     crf/denseho/permutohedral.cpp
-    distance_transform/distance_transform.cpp
     )
 target_link_libraries( urban_zoning ${OpenCV_LIBS} )

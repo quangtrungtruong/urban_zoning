@@ -108,7 +108,7 @@ void CustomizePotential::apply(float* out_values, const float* in_values, float*
 SemiMetricPotential::SemiMetricPotential(const float* features, int D, int N, float w,
                                          const SemiMetricFunction* function,
                                          bool per_pixel_normalization) :
-        SemiMetricPotential(features, D, N, w, per_pixel_normalization ),
+                                        PottsPotential(features, D, N, w, per_pixel_normalization),
     function_(function) {}
 
 
